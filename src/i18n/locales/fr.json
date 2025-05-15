@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "VT Tracker",
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "contact": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "phone": "Numéro de téléphone",
+    "address": "Adresse",
+    "zipCode": "Code postal",
+    "notes": "Notes",
+    "files": "Fichiers",
+    "addFile": "Ajouter un fichier",
+    "searchAddress": "Rechercher une adresse...",
+    "required": "Ce champ est obligatoire",
+    "invalidEmail": "Veuillez entrer une adresse email valide",
+    "invalidPhone": "Veuillez entrer un numéro de téléphone valide"
+  }
+}

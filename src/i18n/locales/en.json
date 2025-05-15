@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "VT Tracker",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "error": "Error",
+    "success": "Success"
+  },
+  "contact": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "address": "Address",
+    "zipCode": "ZIP Code",
+    "notes": "Notes",
+    "files": "Files",
+    "addFile": "Add File",
+    "searchAddress": "Search address...",
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidPhone": "Please enter a valid phone number"
+  }
+}
