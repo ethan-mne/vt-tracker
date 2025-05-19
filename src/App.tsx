@@ -15,7 +15,6 @@ import SignUpPage from "./pages/SignUpPage";
 import ContactsListPage from "./pages/ContactsListPage";
 import NewContactPage from "./pages/NewContactPage";
 import EditContactPage from "./pages/EditContactPage";
-import { LoadScript } from "@react-google-maps/api";
 
 // Liste des librairies Google Maps à charger
 const GOOGLE_LIBS: ("drawing" | "geometry" | "places" | "visualization")[] = [
