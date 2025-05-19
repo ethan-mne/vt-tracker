@@ -33,12 +33,18 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-full bg-blue-800 flex items-center justify-center">
-              <User className="h-8 w-8 text-white" />
-            </div>
+            <img 
+              src="/logo.jpg" 
+              alt={t('common.appName')}
+              className="h-14 w-auto"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            VT Tracker
+            Phœnix - Visite technique
           </h2>
         </div>
 
@@ -52,7 +58,7 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <footer className="bg-white py-4 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} VT Tracker. All rights reserved.
+            &copy; {new Date().getFullYear()} Phœnix - Visite technique. All rights reserved.
           </p>
         </div>
       </footer>
