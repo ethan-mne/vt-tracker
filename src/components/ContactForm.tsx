@@ -46,7 +46,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
       : initialFormValues
   );
   const [submitting, setSubmitting] = useState(false);
-  const { user, decrementCredit } = useAuth();
+  const { user, decrementCredit, refreshCredits } = useAuth();
   const router = useRouter();
 
   const handleChange = (
@@ -97,24 +97,35 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         
         if (!hasCredit) {
           toast.error("You don't have enough credits to create a new contact");
+          setSubmitting(false);
           return;
         }
         
-        const { error } = await supabase.from("contacts").insert({
-          ...formValues,
-          created_by: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
-        if (error) throw error;
-        
-        toast.success("Contact created successfully");
-        router.push("/");
+        try {
+          const { error } = await supabase.from("contacts").insert({
+            ...formValues,
+            created_by: user.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+          
+          if (error) {
+            // If contact creation fails, try to restore the credit
+            await refreshCredits?.();
+            throw error;
+          }
+          
+          toast.success("Contact created successfully");
+          router.push("/");
+        } catch (error) {
+          // If contact creation fails, try to restore the credit
+          await refreshCredits?.();
+          throw error;
+        }
       }
     } catch (error) {
       console.error("Error saving contact:", error);
-      toast.error("Failed to save contact");
+      toast.error("Failed to save contact. Please try again.");
     } finally {
       setSubmitting(false);
     }
