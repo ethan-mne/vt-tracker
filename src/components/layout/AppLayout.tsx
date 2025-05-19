@@ -1,14 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from './Navbar';
 import { Toaster } from 'react-hot-toast';
+import CreditPurchaseModal from '../CreditPurchaseModal';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
 
   // React Router-specific code is removed since we use Next.js router now
   React.useEffect(() => {
@@ -31,7 +33,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+      <Navbar onOpenCreditModal={() => setIsCreditModalOpen(true)} />
       <main className="flex-1 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {children}
@@ -45,6 +47,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </footer>
       <Toaster position="top-right" />
+      <CreditPurchaseModal
+        isOpen={isCreditModalOpen}
+        onClose={() => setIsCreditModalOpen(false)}
+      />
     </div>
   );
 };

@@ -6,13 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
 import { LogOut, Menu, X, CreditCard, User, Plus } from 'lucide-react';
-import CreditPurchaseModal from '../CreditPurchaseModal';
 
-const Navbar: React.FC = () => {
+const Navbar: React.FC<{ onOpenCreditModal: () => void }> = ({ onOpenCreditModal }) => {
   const { user, signOut, credits } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,7 +42,7 @@ const Navbar: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   className="text-gray-700 font-normal"
-                  onClick={() => setIsCreditModalOpen(true)}
+                  onClick={onOpenCreditModal}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
                   <span>{credits} Credits</span>
@@ -106,7 +104,7 @@ const Navbar: React.FC = () => {
               size="sm"
               className="gap-1"
               onClick={() => {
-                setIsCreditModalOpen(true);
+                onOpenCreditModal();
                 setIsMenuOpen(false);
               }}
             >
@@ -140,11 +138,6 @@ const Navbar: React.FC = () => {
           </button>
         </div>
       )}
-
-      <CreditPurchaseModal
-        isOpen={isCreditModalOpen}
-        onClose={() => setIsCreditModalOpen(false)}
-      />
     </nav>
   );
 };
