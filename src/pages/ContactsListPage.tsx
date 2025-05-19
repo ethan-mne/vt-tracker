@@ -8,7 +8,13 @@ import ContactCard from '../components/ContactCard';
 import { CreditCard, Plus, User } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Link from 'next/link';
-import CreditPurchaseModal from '../components/CreditPurchaseModal';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the modal with SSR disabled to avoid Stripe Elements issues during prerendering
+const CreditPurchaseModal = dynamic(
+  () => import('../components/CreditPurchaseModal'),
+  { ssr: false }
+);
 
 const ContactsListPage: React.FC = () => {
   const { user, credits } = useAuth();

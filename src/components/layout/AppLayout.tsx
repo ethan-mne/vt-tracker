@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from './Navbar';
 import { Toaster } from 'react-hot-toast';
-import CreditPurchaseModal from '../CreditPurchaseModal';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the modal with SSR disabled to avoid Stripe Elements issues during prerendering
+const CreditPurchaseModal = dynamic(
+  () => import('../CreditPurchaseModal'),
+  { ssr: false }
+);
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
