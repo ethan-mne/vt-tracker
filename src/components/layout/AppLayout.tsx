@@ -1,16 +1,21 @@
+'use client';
+
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from './Navbar';
 import { Toaster } from 'react-hot-toast';
 
-const AppLayout: React.FC = () => {
+const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
+  const router = useRouter();
 
-  // If not authenticated, redirect to sign in
-  if (!user && !loading) {
-    return <Navigate to="/sign-in" replace />;
-  }
+  // React Router-specific code is removed since we use Next.js router now
+  React.useEffect(() => {
+    if (!user && !loading) {
+      router.push('/sign-in');
+    }
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -20,12 +25,16 @@ const AppLayout: React.FC = () => {
     );
   }
 
+  if (!user && !loading) {
+    return null; // Don't render anything while redirecting
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
       <main className="flex-1 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Outlet />
+          {children}
         </div>
       </main>
       <footer className="bg-white py-4 border-t border-gray-200">
@@ -40,4 +49,4 @@ const AppLayout: React.FC = () => {
   );
 };
 
-export default AppLayout
+export default AppLayout;

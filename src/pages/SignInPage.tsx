@@ -1,9 +1,11 @@
+"use client";
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const SignInPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +13,7 @@ const SignInPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,15 +22,17 @@ const SignInPage: React.FC = () => {
 
     try {
       const { error } = await signIn(email, password);
-      console.log("Connexion result:",  error);
-      console.log("Tentative connexion avec :", email, password);
-
+      
       if (error) {
+        console.error("Sign in error:", error);
         setError('Invalid email or password. Please try again.');
+      } else {
+        // Successful login - redirect to home
+        router.push('/');
       }
     } catch (err) {
+      console.error("Unexpected error during sign in:", err);
       setError('An unexpected error occurred. Please try again.');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -78,7 +83,7 @@ const SignInPage: React.FC = () => {
       
       <div className="mt-6 text-center text-sm text-gray-600">
         Don't have an account?{' '}
-        <Link to="/sign-up" className="text-blue-600 hover:text-blue-800 font-medium">
+        <Link href="/sign-up" className="text-blue-600 hover:text-blue-800 font-medium">
           Sign up
         </Link>
       </div>

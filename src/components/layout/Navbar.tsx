@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
 import { LogOut, Menu, X, CreditCard, User, Plus } from 'lucide-react';
@@ -7,13 +10,13 @@ import CreditPurchaseModal from '../CreditPurchaseModal';
 
 const Navbar: React.FC = () => {
   const { user, signOut, credits } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/sign-in');
+    router.push('/sign-in');
   };
 
   const toggleMenu = () => {
@@ -26,7 +29,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link
-              to="/"
+              href="/"
               className="flex-shrink-0 flex items-center text-blue-800 font-bold text-xl"
             >
               <User className="h-6 w-6 mr-2" />
@@ -47,7 +50,7 @@ const Navbar: React.FC = () => {
                   <span>{credits} Credits</span>
                 </Button>
 
-                <Link to="/contacts/new">
+                <Link href="/contacts/new">
                   <Button size="sm" className="gap-1">
                     <Plus className="h-4 w-4" />
                     New Contact
@@ -80,12 +83,12 @@ const Navbar: React.FC = () => {
             </>
           ) : (
             <div className="flex items-center space-x-3">
-              <Link to="/sign-in">
+              <Link href="/sign-in">
                 <Button variant="outline" size="sm">
                   Sign In
                 </Button>
               </Link>
-              <Link to="/sign-up">
+              <Link href="/sign-up">
                 <Button size="sm">Sign Up</Button>
               </Link>
             </div>
@@ -113,7 +116,7 @@ const Navbar: React.FC = () => {
           </div>
           
           <Link
-            to="/contacts/new"
+            href="/contacts/new"
             className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
             onClick={() => setIsMenuOpen(false)}
           >

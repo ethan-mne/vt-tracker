@@ -1,14 +1,19 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import ContactForm from '../components/ContactForm';
 import { Contact } from '../types/supabase';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../utils/supabase/client';
 import { useAuth } from '../context/AuthContext';
 
-const EditContactPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+interface EditContactPageProps {
+  id?: string;
+}
+
+const EditContactPage: React.FC<EditContactPageProps> = ({ id }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,7 +35,7 @@ const EditContactPage: React.FC = () => {
         }
         
         if (!data) {
-          navigate('/');
+          router.push('/');
           return;
         }
         
@@ -44,7 +49,7 @@ const EditContactPage: React.FC = () => {
     };
     
     fetchContact();
-  }, [id, user, navigate]);
+  }, [id, user, router]);
 
   if (loading) {
     return (

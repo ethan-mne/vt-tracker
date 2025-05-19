@@ -1,15 +1,20 @@
+'use client';
+
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { User } from 'lucide-react';
 
-const AuthLayout: React.FC = () => {
+const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
+  const router = useRouter();
 
-  // If already authenticated, redirect to dashboard
-  if (user && !loading) {
-    return <Navigate to="/" replace />;
-  }
+  // React Router-specific code is removed since we use Next.js router now
+  React.useEffect(() => {
+    if (user && !loading) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -17,6 +22,10 @@ const AuthLayout: React.FC = () => {
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  if (user && !loading) {
+    return null; // Don't render anything while redirecting
   }
 
   return (
@@ -35,7 +44,7 @@ const AuthLayout: React.FC = () => {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <Outlet />
+            {children}
           </div>
         </div>
       </div>
@@ -51,4 +60,4 @@ const AuthLayout: React.FC = () => {
   );
 };
 
-export default AuthLayout
+export default AuthLayout;
