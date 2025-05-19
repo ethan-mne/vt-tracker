@@ -89,11 +89,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         if (error) throw error;
         
         toast.success("Contact updated successfully");
+        setSubmitting(false);
         router.push("/");
       } else {
         // Create new contact
+        console.log("Starting credit check...");
         // First check if user has credits
         const hasCredit = await decrementCredit();
+        console.log("Credit check result:", hasCredit);
         
         if (!hasCredit) {
           toast.error("You don't have enough credits to create a new contact");
@@ -102,22 +105,31 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         }
         
         try {
-          const { error } = await supabase.from("contacts").insert({
+          console.log("Attempting to create contact...");
+          const { data, error } = await supabase.from("contacts").insert({
             ...formValues,
             created_by: user.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          });
+          }).select();
           
           if (error) {
+            console.error("Contact creation error:", error);
             // If contact creation fails, try to restore the credit
             await refreshCredits?.();
             throw error;
           }
           
+          console.log("Contact created successfully:", data);
           toast.success("Contact created successfully");
-          router.push("/");
+          setSubmitting(false);
+          
+          // Use setTimeout to ensure state updates are processed before navigation
+          setTimeout(() => {
+            router.push("/");
+          }, 100);
         } catch (error) {
+          console.error("Error in contact creation:", error);
           // If contact creation fails, try to restore the credit
           await refreshCredits?.();
           throw error;
@@ -126,7 +138,6 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
     } catch (error) {
       console.error("Error saving contact:", error);
       toast.error("Failed to save contact. Please try again.");
-    } finally {
       setSubmitting(false);
     }
   };
