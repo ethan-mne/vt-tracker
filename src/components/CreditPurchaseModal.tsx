@@ -9,14 +9,16 @@ import { CreditCard, Euro } from "lucide-react";
 import { formatPrice } from "../lib/utils";
 import toast from "react-hot-toast";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { createPaymentIntent } from "../lib/payment-intent";
+import { createPaymentIntent, checkPaymentStatus } from "../lib/payment-intent";
+import { useTranslation } from "react-i18next";
+
 interface CreditPurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 // Constants
-const CREDIT_PRICE = 2; // €2 per credit
+const CREDIT_PRICE = 50; // €50 per credit
 const CREDIT_PACKAGES = [1, 5, 10, 20];
 
 const CARD_ELEMENT_OPTIONS = {
@@ -79,7 +81,8 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { user, refreshCredits } = useAuth();
   const stripe = useStripe();
   const elements = useElements();
   const [selectedAmount, setSelectedAmount] = useState(5);
@@ -91,12 +94,12 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       e.preventDefault();
 
       if (!stripe || !elements || !user) {
-        setErrorMessage("Payment system not ready or user not logged in");
+        setErrorMessage(t("payment.systemNotReady", { defaultValue: "Payment system not ready or user not logged in" }));
         return;
       }
 
       if (selectedAmount <= 0) {
-        setErrorMessage("Please select a valid amount of credits");
+        setErrorMessage(t("payment.invalidAmount", { defaultValue: "Please select a valid amount of credits" }));
         return;
       }
 
@@ -105,76 +108,87 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
       try {
         // Create payment intent on the server
-        const { clientSecret } = await createPaymentIntent(
+        const { clientSecret, paymentIntentId } = await createPaymentIntent(
           user.id,
           selectedAmount
         );
 
-        if (!clientSecret) {
-          throw new Error("Failed to create payment intent");
+        if (!clientSecret || !paymentIntentId) {
+          throw new Error(t("payment.failedCreateIntent", { defaultValue: "Failed to create payment intent" }));
         }
 
         // Confirm the payment with Stripe.js
         const cardElement = elements.getElement(CardElement);
         if (!cardElement) {
-          throw new Error("Card element not found");
+          throw new Error(t("payment.cardElementNotFound", { defaultValue: "Card element not found" }));
         }
 
-        const { error, paymentIntent } = await stripe.confirmCardPayment(
-          clientSecret,
-          {
-            payment_method: {
-              card: cardElement,
-              billing_details: {
-                email: user.email,
-              },
+        const { error } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              email: user.email,
             },
-          }
-        );
+          },
+        });
 
         if (error) {
-          throw new Error(error.message || "Payment failed");
-        } else if (paymentIntent.status === "succeeded") {
-          toast.success(`Successfully purchased ${selectedAmount} credits!`);
+          throw new Error(error.message || t("payment.failed", { defaultValue: "Payment failed" }));
+        }
+
+        // Check payment status directly
+        const paymentStatus = await checkPaymentStatus(paymentIntentId);
+        
+        if (paymentStatus.status === 'succeeded') {
+          toast.success(
+            t("payment.success", { count: selectedAmount, defaultValue: "Successfully purchased {{count}} credits!" })
+          );
+          // Refresh user credits
+          if (refreshCredits) {
+            await refreshCredits();
+          }
           onClose();
-          // The webhook will add credits to the user account
         } else {
-          throw new Error(`Payment returned status: ${paymentIntent.status}`);
+          throw new Error(
+            t("payment.statusError", { message: paymentStatus.message, defaultValue: "Payment status: {{message}}" })
+          );
         }
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "Unknown error occurred"
+          error instanceof Error ? error.message : t("payment.unknownError", { defaultValue: "Unknown error occurred" })
         );
-        toast.error("Payment failed. Please try again.");
+        toast.error(t("payment.failedTryAgain", { defaultValue: "Payment failed. Please try again." }));
       } finally {
         setIsProcessing(false);
       }
     },
-    [stripe, elements, user, selectedAmount, onClose]
+    [stripe, elements, user, selectedAmount, onClose, refreshCredits, t]
   );
 
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Purchase Credits">
+    <Modal isOpen={isOpen} onClose={onClose} title={t("payment.purchaseCredits", { defaultValue: "Purchase Credits" })}>
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           <div className="flex items-center justify-center p-6 bg-blue-50 rounded-lg">
             <CreditCard className="w-12 h-12 text-blue-600 mr-4" />
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Credits for Contact Creation
+                {t("payment.creditsForContact", { defaultValue: "Credits for Contact Creation" })}
               </h3>
               <p className="text-gray-600">
-                Each credit costs {formatPrice(CREDIT_PRICE)} and allows you to
-                create one contact.
+                {t("payment.creditDescription", {
+                  price: formatPrice(CREDIT_PRICE),
+                  defaultValue: "Each credit costs {{price}} and allows you to create one contact."
+                })}
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
             <h4 className="font-medium text-gray-900">
-              Choose number of credits:
+              {t("payment.chooseCredits", { defaultValue: "Choose number of credits:" })}
             </h4>
             <CreditPackages
               packages={CREDIT_PACKAGES}
@@ -202,7 +216,7 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
               disabled={isProcessing}
               type="button"
             >
-              Cancel
+              {t("common.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               type="submit"
@@ -211,7 +225,9 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
               className="gap-2"
             >
               <Euro className="w-4 h-4" />
-              {isProcessing ? "Processing..." : "Pay"}
+              {isProcessing
+                ? t("payment.processing", { defaultValue: "Processing..." })
+                : t("payment.pay", { defaultValue: "Pay" })}
             </Button>
           </div>
         </div>
