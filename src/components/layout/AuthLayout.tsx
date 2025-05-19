@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { User } from 'lucide-react';
 
 const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {

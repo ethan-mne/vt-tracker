@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import ContactForm from '../components/ContactForm';
 import { Contact } from '../types/supabase';
 import { supabase } from '../utils/supabase/client';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 interface EditContactPageProps {
   id?: string;

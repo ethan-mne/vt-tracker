@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import Navbar from './Navbar';
 import { Toaster } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
