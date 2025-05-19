@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
@@ -31,13 +32,14 @@ const SignUpPage: React.FC = () => {
     try {
       const { error } = await signUp(email, password);
       if (error) {
+        console.error("Sign up error:", error);
         setError(error.message || 'Failed to create account. Please try again.');
       } else {
         setSuccess(true);
       }
     } catch (err) {
+      console.error("Unexpected error during sign up:", err);
       setError('An unexpected error occurred. Please try again.');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ const SignUpPage: React.FC = () => {
         <p className="text-gray-600 mb-6">
           You can now sign in with your email and password.
         </p>
-        <Link to="/sign-in">
+        <Link href="/sign-in">
           <Button className="w-full">Go to Sign In</Button>
         </Link>
       </div>
@@ -124,7 +126,7 @@ const SignUpPage: React.FC = () => {
       
       <div className="mt-6 text-center text-sm text-gray-600">
         Already have an account?{' '}
-        <Link to="/sign-in" className="text-blue-600 hover:text-blue-800 font-medium">
+        <Link href="/sign-in" className="text-blue-600 hover:text-blue-800 font-medium">
           Sign in
         </Link>
       </div>

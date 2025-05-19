@@ -1,152 +1,126 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../utils/supabase/client';
 import { Contact } from '../types/supabase';
+import { useAuth } from '../context/AuthContext';
 import ContactCard from '../components/ContactCard';
+import { CreditCard, Plus, User } from 'lucide-react';
 import Button from '../components/ui/Button';
-import {CreditCard , Plus, UserSearch, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 import CreditPurchaseModal from '../components/CreditPurchaseModal';
 
 const ContactsListPage: React.FC = () => {
   const { user, credits } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
 
-  const fetchContacts = async () => {
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .eq('created_by', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          throw error;
+        }
+        
+        setContacts(data || []);
+      } catch (err) {
+        console.error('Error fetching contacts:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchContacts();
+  }, [user]);
+
+  const refreshContacts = async () => {
+    if (!user) return;
+    
     setLoading(true);
-    setError('');
-
     try {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .eq('created_by', user!.id)
-        .order('first_name', { ascending: true });
-
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
+        
       if (error) {
         throw error;
       }
-
+      
       setContacts(data || []);
     } catch (err) {
-      console.error('Error fetching contacts:', err);
-      setError('Failed to load contacts. Please try again.');
+      console.error('Error refreshing contacts:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchContacts();
-    }
-  }, [user]);
-
-  const handleDeleteContact = (id: string) => {
-    setContacts((prev) => prev.filter((contact) => contact.id !== id));
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Loading contacts...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
-          My Contacts
-        </h1>
-
-        <div className="flex space-x-3">
-          <Button
-            variant="outline"
-            onClick={fetchContacts}
-            className="flex items-center gap-1"
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">My Contacts</h1>
+        <div className="flex items-center space-x-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-gray-700 font-normal"
+            onClick={() => setIsCreditModalOpen(true)}
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+            <CreditCard className="h-4 w-4 mr-2" />
+            <span>{credits} Credits</span>
           </Button>
-
-          {credits > 0 ? (
-            <Link to="/contacts/new">
-              <Button className="flex items-center gap-1">
-                <Plus className="h-4 w-4" />
-                New Contact
-              </Button>
-            </Link>
-          ) : (
-            <Button 
-              onClick={() => setShowCreditModal(true)}
-              className="flex items-center gap-1"
-            >
-              <CreditCard  className="h-4 w-4" />
-              Purchase Credits
+          
+          <Link href="/contacts/new">
+            <Button size="sm" className="gap-1">
+              <Plus className="h-4 w-4" />
+              New Contact
             </Button>
-          )}
+          </Link>
         </div>
       </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6">
-          {error}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchContacts}
-            className="ml-4"
-          >
-            Try Again
-          </Button>
-        </div>
-      )}
-
-      {contacts.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="flex justify-center">
-            <UserSearch className="h-16 w-16 text-gray-400" />
+      
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Loading contacts...</p>
           </div>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No contacts found
-          </h3>
-          <p className="mt-2 text-gray-600 max-w-md mx-auto">
-            {credits > 0
-              ? "You don't have any contacts yet. Create your first contact with the button above."
-              : "You don't have any contacts yet. Purchase credits to add your first contact."}
-          </p>
-          {credits === 0 && (
-            <Button
-              className="mt-4"
-              onClick={() => setShowCreditModal(true)}
-            >
-              Purchase Credits
-            </Button>
-          )}
         </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+      ) : contacts.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {contacts.map((contact) => (
-            <ContactCard
-              key={contact.id}
-              contact={contact}
-              onDelete={handleDeleteContact}
-            />
+            <ContactCard key={contact.id} contact={contact} onDelete={refreshContacts} />
           ))}
         </div>
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+          <div className="mx-auto h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+            <User className="h-6 w-6 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts yet</h3>
+          <p className="text-gray-500 mb-6">Get started by creating your first contact.</p>
+          <Link href="/contacts/new">
+            <Button size="sm" className="gap-1">
+              <Plus className="h-4 w-4" />
+              Add a Contact
+            </Button>
+          </Link>
+        </div>
       )}
-
-      <CreditPurchaseModal
-        isOpen={showCreditModal}
-        onClose={() => setShowCreditModal(false)}
+      
+      <CreditPurchaseModal 
+        isOpen={isCreditModalOpen}
+        onClose={() => setIsCreditModalOpen(false)}
       />
     </div>
   );

@@ -1,272 +1,255 @@
-import React, { useState, useEffect } from "react";
-import Input from "./ui/Input";
-import Button from "./ui/Button";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
-import toast from "react-hot-toast";
-import { Contact } from "../types/supabase";
-import CreditPurchaseModal from "./CreditPurchaseModal";
-import { loadStripe } from "@stripe/stripe-js";
+'use client';
 
-import usePlacesAutocomplete, {
-  getGeocode,
-  getLatLng,
-} from "use-places-autocomplete";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { supabase } from "../utils/supabase/client";
+import { useAuth } from "../context/AuthContext";
+import { Contact } from "../types/supabase";
+import Button from "./ui/Button";
+import { Save, Loader2 } from "lucide-react";
 
 interface ContactFormProps {
   contact?: Contact;
   isEditing?: boolean;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({
-  contact,
-  isEditing = false,
-}) => {
-  const [first_name, setFirst_name] = useState(contact?.first_name || "");
-  const [lastName, setLastName] = useState(contact?.last_name || "");
-  const [phone, setPhone] = useState(contact?.phone || "");
-  const [email, setEmail] = useState(contact?.email || "");
-  const [addressInput, setAddressInput] = useState(contact?.address || "");
-  const [postalCode, setPostalCode] = useState(contact?.postal_code || "");
-  const [note, setNote] = useState(contact?.note || "");
-  const [document, setDocument] = useState<File | null>(null);
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [errors, setErrors] = useState<{
-    first_name?: string;
-    lastName?: string;
-    phone?: string;
-    email?: string;
-  }>({});
-  const stripePromise = loadStripe(
-    "pk_test_51RPLPVQBeFk3RpuyXbNl2pI1ahZu1lLYzDNQFfQrxoZDxgr0xrFNWHFyTVASlJK4wUhaZZvVhgI8CIfV83rx0B9t00c9ViLMYL"
+interface FormValues {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  note: string;
+}
+
+const initialFormValues: FormValues = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  address: "",
+  note: "",
+};
+
+const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false }) => {
+  const [formValues, setFormValues] = useState<FormValues>(
+    contact
+      ? {
+          first_name: contact.first_name || "",
+          last_name: contact.last_name || "",
+          email: contact.email || "",
+          phone: contact.phone || "",
+          address: contact.address || "",
+          note: contact.note || "",
+        }
+      : initialFormValues
   );
-  const { user, credits, decrementCredit } = useAuth();
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const { user, decrementCredit } = useAuth();
+  const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-
-  const validate = (): boolean => {
-    const newErrors: typeof errors = {};
-    if (!first_name.trim()) newErrors.first_name = "First name is required";
-    if (!lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!phone.trim()) newErrors.phone = "Phone is required";
-    else if (
-      !/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/.test(
-        phone.replace(/\s/g, "")
-      )
-    )
-      newErrors.phone = "Invalid phone";
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      newErrors.email = "Invalid email";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSelectAddress = async (selectedAddress: string) => {
-    setAddressInput(selectedAddress);
-    setSuggestions([]);
-
-    try {
-      // Récupérer les détails complets de l'adresse
-      const results = await getGeocode({ address: selectedAddress });
-      if (results.length === 0) {
-        console.warn("No geocode results found");
-        return;
-      }
-
-      // Extraire latitude et longitude
-      const { lat, lng } = await getLatLng(results[0]);
-      setLat(lat);
-      setLng(lng);
-
-      // Trouver le code postal dans les composants de l'adresse
-      const postalComponent = results[0].address_components.find((component) =>
-        component.types.includes("postal_code")
-      );
-      setPostalCode(postalComponent?.long_name || "");
-
-      // Mettre à jour l'adresse complète (optionnel)
-      setAddressInput(selectedAddress);
-    } catch (error) {
-      console.error("Error during geocoding:", error);
-    }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-
-    if (!isEditing && credits < 1) {
-      setLoading(true);
-      try {
-        const stripe = await stripePromise;
-        const response = await fetch("/api/create-checkout-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user!.id }),
-        });
-        const session = await response.json();
-        if (session.error) throw new Error("Stripe session creation failed");
-        await stripe!.redirectToCheckout({ sessionId: session.id });
-      } catch (error: any) {
-        console.error(error);
-        toast.error("Payment error");
-      } finally {
-        setLoading(false);
-      }
+    
+    if (!user) {
+      toast.error("You must be logged in to save contacts");
       return;
     }
-
-    setLoading(true);
+    
+    // Validate required fields
+    if (!formValues.first_name || !formValues.last_name) {
+      toast.error("First name and last name are required");
+      return;
+    }
+    
+    setSubmitting(true);
+    
     try {
-      let documentUrl = null;
-      if (document) {
-        const { data, error: uploadError } = await supabase.storage
-          .from("document")
-          .upload(`document/${document.name}`, document);
-        if (uploadError) throw uploadError;
-        documentUrl = data?.path || null;
-      }
-
-      const contactData = {
-        first_name: first_name,
-        last_name: lastName,
-        phone,
-        email,
-        address: addressInput || addressInput,
-        postal_code: postalCode,
-        note,
-        document_url: documentUrl,
-        created_by: user!.id,
-        latitude: lat,
-        longitude: lng,
-      };
-
-      if (isEditing) {
+      if (isEditing && contact) {
+        // Update existing contact
         const { error } = await supabase
           .from("contacts")
-          .update(contactData)
-          .eq("id", contact!.id);
+          .update({
+            ...formValues,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", contact.id);
+          
         if (error) throw error;
+        
         toast.success("Contact updated successfully");
+        router.push("/");
       } else {
-        const { error } = await supabase.from("contacts").insert(contactData);
+        // Create new contact
+        // First check if user has credits
+        const hasCredit = await decrementCredit();
+        
+        if (!hasCredit) {
+          toast.error("You don't have enough credits to create a new contact");
+          return;
+        }
+        
+        const { error } = await supabase.from("contacts").insert({
+          ...formValues,
+          created_by: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        
         if (error) throw error;
-        await decrementCredit();
+        
         toast.success("Contact created successfully");
+        router.push("/");
       }
-
-      navigate("/");
-      window.location.reload();
     } catch (error) {
-      console.error(error);
-      toast.error("Error saving contact");
+      console.error("Error saving contact:", error);
+      toast.error("Failed to save contact");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Input
-        label="First Name"
-        id="name"
-        value={first_name}
-        onChange={(e) => setFirst_name(e.target.value)}
-        error={errors.first_name}
-        required
-      />
-      <Input
-        label="Last Name"
-        id="last-name"
-        value={lastName}
-        onChange={(e) => setLastName(e.target.value)}
-        error={errors.lastName}
-        required
-      />
-      <Input
-        label="Phone"
-        id="phone"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        error={errors.phone}
-        required
-      />
-      <Input
-        label="Email"
-        id="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        error={errors.email}
-        required
-      />
-      <div className="relative">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="first_name"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            First Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="first_name"
+            name="first_name"
+            value={formValues.first_name}
+            onChange={handleChange}
+            required
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="last_name"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Last Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="last_name"
+            name="last_name"
+            value={formValues.last_name}
+            onChange={handleChange}
+            required
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="email"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formValues.email}
+          onChange={handleChange}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="phone"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Phone Number
+        </label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          value={formValues.phone}
+          onChange={handleChange}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+        />
+      </div>
+
+      <div>
         <label
           htmlFor="address"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-700 mb-1"
         >
           Address
         </label>
         <input
+          type="text"
           id="address"
-          value={addressInput}
-          onChange={(e) => setAddressInput(e.target.value)}
-          placeholder="Enter address"
-          autoComplete="off"
-          className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-          required
+          name="address"
+          value={formValues.address}
+          onChange={handleChange}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
         />
-        {loadingSuggestions && <div>Loading...</div>}
-        {suggestions.length > 0 && (
-          <ul className="absolute z-10 bg-white border w-full max-h-48 overflow-auto rounded-md">
-            {suggestions.map(({ place_id, description }) => (
-              <li
-                key={place_id}
-                onClick={() => handleSelectAddress(description)}
-                className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-              >
-                {description}
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
-      <Input
-        label="Postal Code"
-        id="postal-code"
-        value={postalCode}
-        onChange={(e) => setPostalCode(e.target.value)}
-        required
-      />
-      <label htmlFor="note" className="block text-sm font-medium text-gray-700">
-        Note
-      </label>
-      <textarea
-        id="note"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-        rows={3}
-      />
-      <label className="block text-sm font-medium text-gray-700">
-        Upload Document
-      </label>
-      <input
-        type="file"
-        onChange={(e) => setDocument(e.target.files?.[0] || null)}
-        className="mt-1 block w-full"
-      />
-      <Button type="submit" disabled={loading}>
-        {loading
-          ? "Submitting..."
-          : isEditing
-          ? "Update Contact"
-          : "Create Contact"}
-      </Button>
+
+      <div>
+        <label
+          htmlFor="notes"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Notes
+        </label>
+        <textarea
+          id="notes"
+          name="note"
+          rows={3}
+          value={formValues.note}
+          onChange={handleChange}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+        />
+      </div>
+
+      <div className="flex gap-3 justify-end pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push("/")}
+          disabled={submitting}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              {isEditing ? "Update Contact" : "Save Contact"}
+            </>
+          )}
+        </Button>
+      </div>
     </form>
   );
 };

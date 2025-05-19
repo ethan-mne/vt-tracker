@@ -1,4 +1,6 @@
 // src/components/CreditPurchaseModal.tsx
+"use client";
+
 import React, { useState, useCallback } from "react";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
@@ -6,27 +8,16 @@ import { useAuth } from "../context/AuthContext";
 import { CreditCard, Euro } from "lucide-react";
 import { formatPrice } from "../lib/utils";
 import toast from "react-hot-toast";
-import {
-  CardElement,
-  useStripe,
-  useElements,
-  Elements,
-} from "@stripe/react-stripe-js";
-
-import { loadStripe } from "@stripe/stripe-js";
-
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { createPaymentIntent } from "../lib/payment-intent";
 interface CreditPurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 // Constants
-const CREDIT_PRICE = 50;
+const CREDIT_PRICE = 2; // €2 per credit
 const CREDIT_PACKAGES = [1, 5, 10, 20];
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4242";
-
-// Stripe configuration
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -58,7 +49,7 @@ const CreditPackages: React.FC<{
         }`}
       >
         <span className="text-2xl font-bold">{amount}</span>
-        <span className="text-gray-600 text-sm">crédits</span>
+        <span className="text-gray-600 text-sm">credits</span>
         <span className="mt-1 text-blue-700 font-medium">
           {formatPrice(amount * CREDIT_PRICE)}
         </span>
@@ -72,11 +63,11 @@ const PaymentSummary: React.FC<{ selectedAmount: number }> = ({
 }) => (
   <div className="bg-gray-50 p-4 rounded-lg">
     <div className="flex justify-between items-center">
-      <span className="text-gray-700">Prix unitaire :</span>
+      <span className="text-gray-700">Price per credit:</span>
       <span className="font-medium">{formatPrice(CREDIT_PRICE)}</span>
     </div>
     <div className="flex justify-between items-center mt-2 text-lg font-medium">
-      <span>Total :</span>
+      <span>Total:</span>
       <span className="text-blue-700">
         {formatPrice(selectedAmount * CREDIT_PRICE)}
       </span>
@@ -84,104 +75,106 @@ const PaymentSummary: React.FC<{ selectedAmount: number }> = ({
   </div>
 );
 
-const InnerModal: React.FC<CreditPurchaseModalProps> = ({
+const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { addCredits } = useAuth();
+  const { user } = useAuth();
   const stripe = useStripe();
   const elements = useElements();
   const [selectedAmount, setSelectedAmount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const handlePaymentSuccess = useCallback(async () => {
-    const success = await addCredits(selectedAmount);
-    if (success) {
-      toast.success(`Achat de ${selectedAmount} crédits réussi !`);
-      onClose();
-    } else {
-      toast.error("Échec de l'ajout des crédits en base");
-    }
-  }, [addCredits, selectedAmount, onClose]);
-
-  const processPayment = useCallback(
-    async (clientSecret: string) => {
-      if (!stripe || !elements) return;
-
-      const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: {
-            card: elements.getElement(CardElement)!,
-          },
-        }
-      );
-
-      if (error) {
-        throw new Error(error.message || "Erreur lors du paiement");
-      }
-
-      if (paymentIntent?.status === "succeeded") {
-        await handlePaymentSuccess();
-      }
-    },
-    [stripe, elements, handlePaymentSuccess]
-  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!stripe || !elements || selectedAmount <= 0) return;
+
+      if (!stripe || !elements || !user) {
+        setErrorMessage("Payment system not ready or user not logged in");
+        return;
+      }
+
+      if (selectedAmount <= 0) {
+        setErrorMessage("Please select a valid amount of credits");
+        return;
+      }
 
       setIsProcessing(true);
+      setErrorMessage(null);
 
       try {
-        const response = await fetch(`${API_URL}/create-payment-intent`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: selectedAmount * CREDIT_PRICE * 100,
-          }),
-        });
+        // Create payment intent on the server
+        const { clientSecret } = await createPaymentIntent(
+          user.id,
+          selectedAmount
+        );
 
-        if (!response.ok) {
-          throw new Error("Erreur lors de la création du paiement");
+        if (!clientSecret) {
+          throw new Error("Failed to create payment intent");
         }
 
-        const { clientSecret } = await response.json();
-        await processPayment(clientSecret);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Erreur inconnue";
-        toast.error(message);
+        // Confirm the payment with Stripe.js
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          throw new Error("Card element not found");
+        }
+
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                email: user.email,
+              },
+            },
+          }
+        );
+
+        if (error) {
+          throw new Error(error.message || "Payment failed");
+        } else if (paymentIntent.status === "succeeded") {
+          toast.success(`Successfully purchased ${selectedAmount} credits!`);
+          onClose();
+          // The webhook will add credits to the user account
+        } else {
+          throw new Error(`Payment returned status: ${paymentIntent.status}`);
+        }
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Unknown error occurred"
+        );
+        toast.error("Payment failed. Please try again.");
       } finally {
         setIsProcessing(false);
       }
     },
-    [stripe, elements, selectedAmount, processPayment]
+    [stripe, elements, user, selectedAmount, onClose]
   );
 
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Acheter des crédits">
+    <Modal isOpen={isOpen} onClose={onClose} title="Purchase Credits">
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           <div className="flex items-center justify-center p-6 bg-blue-50 rounded-lg">
             <CreditCard className="w-12 h-12 text-blue-600 mr-4" />
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Crédits pour création de contact
+                Credits for Contact Creation
               </h3>
               <p className="text-gray-600">
-                Chaque crédit coûte {formatPrice(CREDIT_PRICE)} et permet de
-                créer un contact.
+                Each credit costs {formatPrice(CREDIT_PRICE)} and allows you to
+                create one contact.
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
             <h4 className="font-medium text-gray-900">
-              Choisissez le nombre de crédits :
+              Choose number of credits:
             </h4>
             <CreditPackages
               packages={CREDIT_PACKAGES}
@@ -191,6 +184,12 @@ const InnerModal: React.FC<CreditPurchaseModalProps> = ({
           </div>
 
           <PaymentSummary selectedAmount={selectedAmount} />
+
+          {errorMessage && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
+              {errorMessage}
+            </div>
+          )}
 
           <div className="p-4 bg-white rounded-lg border">
             <CardElement options={CARD_ELEMENT_OPTIONS} />
@@ -203,7 +202,7 @@ const InnerModal: React.FC<CreditPurchaseModalProps> = ({
               disabled={isProcessing}
               type="button"
             >
-              Annuler
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -212,7 +211,7 @@ const InnerModal: React.FC<CreditPurchaseModalProps> = ({
               className="gap-2"
             >
               <Euro className="w-4 h-4" />
-              {isProcessing ? "Traitement..." : "Payer"}
+              {isProcessing ? "Processing..." : "Pay"}
             </Button>
           </div>
         </div>
@@ -220,11 +219,5 @@ const InnerModal: React.FC<CreditPurchaseModalProps> = ({
     </Modal>
   );
 };
-
-const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = (props) => (
-  <Elements stripe={stripePromise}>
-    <InnerModal {...props} />
-  </Elements>
-);
 
 export default CreditPurchaseModal;
