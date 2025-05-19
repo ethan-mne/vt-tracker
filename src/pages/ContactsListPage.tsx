@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Contact } from '../types/supabase';
 import ContactCard from '../components/ContactCard';
 import Button from '../components/ui/Button';
-import { Plus, UserSearch, RefreshCw } from 'lucide-react';
+import {CreditCard , Plus, UserSearch, RefreshCw } from 'lucide-react';
 import CreditPurchaseModal from '../components/CreditPurchaseModal';
 
 const ContactsListPage: React.FC = () => {
@@ -24,7 +24,7 @@ const ContactsListPage: React.FC = () => {
         .from('contacts')
         .select('*')
         .eq('created_by', user!.id)
-        .order('name', { ascending: true });
+        .order('first_name', { ascending: true });
 
       if (error) {
         throw error;
@@ -89,8 +89,8 @@ const ContactsListPage: React.FC = () => {
               onClick={() => setShowCreditModal(true)}
               className="flex items-center gap-1"
             >
-              <Plus className="h-4 w-4" />
-              New Contact
+              <CreditCard  className="h-4 w-4" />
+              Purchase Credits
             </Button>
           )}
         </div>

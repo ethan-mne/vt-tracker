@@ -12,21 +12,45 @@ export interface Database {
       contacts: {
         Row: {
           id: string;
-          name: string;
+          first_name: string;
+          last_name: string;
           phone: string;
-          created_at: string;
+          email?: string;
+          address?: string;
+          postal_code?: string;
+          note?: string;
+          document_url?: string;
+          latitude?: number;
+          longitude?: number;
           created_by: string;
+          created_at: Date;
         };
         Insert: {
           id?: string;
-          name: string;
+          first_name: string;
+          email: string | null;
+          address: string | null;
+          postal_code: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          note: string | null;
+          document_url: string | null;
+          last_name: string;
           phone: string;
           created_at?: string;
           created_by: string;
         };
         Update: {
           id?: string;
-          name?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string | null;
+          address?: string | null;
+          postal_code?: string |null;
+          latitude?: number | null;
+          longitude?: number | null;
+          note?: string | null;
+          document_url?: string | null;
           phone?: string;
           created_at?: string;
           created_by?: string;

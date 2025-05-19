@@ -19,7 +19,7 @@
 */
 
 ALTER TABLE contacts
-  ADD COLUMN first_name text NOT NULL,
+  ADD COLUMN name text NOT NULL,
   ADD COLUMN last_name text NOT NULL,
   ADD COLUMN email text,
   ADD COLUMN address text,

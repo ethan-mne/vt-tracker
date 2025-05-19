@@ -25,10 +25,14 @@
 CREATE TABLE IF NOT EXISTS contacts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
+  lastname text NOT NULL,
   phone text NOT NULL,
   created_at timestamptz DEFAULT now(),
   created_by uuid REFERENCES auth.users(id) NOT NULL
 );
+
+
+
 
 -- Create user_credits table
 CREATE TABLE IF NOT EXISTS user_credits (

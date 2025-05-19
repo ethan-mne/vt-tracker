@@ -54,7 +54,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => {
               <User className="h-5 w-5 text-blue-700" />
             </div>
             <div className="ml-3">
-              <h3 className="text-lg font-semibold text-gray-900">{contact.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{contact.first_name}</h3>
               <div className="flex items-center mt-1 text-gray-600">
                 <Phone className="h-4 w-4 mr-1" />
                 <span>{formatPhone(contact.phone)}</span>

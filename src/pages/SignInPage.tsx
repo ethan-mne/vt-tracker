@@ -19,6 +19,9 @@ const SignInPage: React.FC = () => {
 
     try {
       const { error } = await signIn(email, password);
+      console.log("Connexion result:",  error);
+      console.log("Tentative connexion avec :", email, password);
+
       if (error) {
         setError('Invalid email or password. Please try again.');
       }
