@@ -5,11 +5,12 @@ import { supabase } from '../utils/supabase/client';
 import { Contact } from '../types/supabase';
 import { useAuth } from '../context/useAuth';
 import ContactCard from '../components/ContactCard';
-import { Plus, User } from 'lucide-react';
+import { Plus, User, AlertCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 
 // Dynamically import the modal with SSR disabled to avoid Stripe Elements issues during prerendering
 const CreditPurchaseModal = dynamic(
@@ -22,13 +23,20 @@ const ContactsListPage: React.FC = () => {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchContacts = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       
       try {
+        setError(null);
         const { data, error } = await supabase
           .from('contacts')
           .select('*')
@@ -39,21 +47,34 @@ const ContactsListPage: React.FC = () => {
           throw error;
         }
         
-        setContacts(data || []);
+        if (mounted) {
+          setContacts(data || []);
+        }
       } catch (err) {
         console.error('Error fetching contacts:', err);
+        if (mounted) {
+          setError('Failed to load contacts. Please try again.');
+          toast.error('Failed to load contacts');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
     
     fetchContacts();
+    
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   const refreshContacts = async () => {
     if (!user) return;
     
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('contacts')
@@ -68,45 +89,49 @@ const ContactsListPage: React.FC = () => {
       setContacts(data || []);
     } catch (err) {
       console.error('Error refreshing contacts:', err);
+      setError('Failed to refresh contacts. Please try again.');
+      toast.error('Failed to refresh contacts');
     } finally {
       setLoading(false);
     }
   };
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-2">
+          <AlertCircle className="h-5 w-5" />
+          <span>{error}</span>
+        </div>
+        <Button 
+          onClick={refreshContacts}
+          className="mt-4"
+          variant="outline"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">{t('common.loading', { defaultValue: 'Loading contacts...' })}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{t('common.appName', { defaultValue: 'My Contacts' })}</h1>
-        {/* <div className="flex items-center space-x-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-700 font-normal"
-            onClick={() => setIsCreditModalOpen(true)}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            <span>
-              {credits} {t('common.credits')}
-            </span>
-          </Button>
-          
-          <Link href="/contacts/new">
-            <Button size="sm" className="gap-1">
-              <Plus className="h-4 w-4" />
-              {t('common.newContact')}
-            </Button>
-          </Link>
-        </div> */}
       </div>
       
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">{t('common.loading', { defaultValue: 'Loading contacts...' })}</p>
-          </div>
-        </div>
-      ) : contacts.length > 0 ? (
+      {contacts.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {contacts.map((contact) => (
             <ContactCard key={contact.id} contact={contact} onDelete={refreshContacts} />

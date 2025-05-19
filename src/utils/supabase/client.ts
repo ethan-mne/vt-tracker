@@ -9,7 +9,18 @@ export const createClientSideClient = () => {
     throw new Error('Missing Supabase environment variables');
   }
   
-  return createClient<Database>(supabaseUrl, supabaseAnonKey);
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'vt-tracker'
+      }
+    }
+  });
 };
 
 // For singleton pattern (client-side only)
