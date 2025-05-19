@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import Button from '../ui/Button';
 import { LogOut, Menu, X, CreditCard, User, Plus, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

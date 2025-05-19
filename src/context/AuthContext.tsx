@@ -1,41 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase/client';
+import { AuthContextType, defaultContext } from './authTypes';
 
-interface AuthContextType {
-  session: Session | null;
-  user: User | null;
-  signIn: (email: string, password: string) => Promise<{
-    error: Error | null;
-  }>;
-  signUp: (email: string, password: string) => Promise<{
-    error: Error | null;
-  }>;
-  signOut: () => Promise<void>;
-  loading: boolean;
-  credits: number;
-  refreshCredits: () => Promise<void>;
-  decrementCredit: () => Promise<boolean>;
-  addCredits: (amount: number) => Promise<boolean>;
-}
-
-// Create a context with default values
-const defaultContext: AuthContextType = {
-  session: null,
-  user: null,
-  signIn: async () => ({ error: new Error('Not implemented') }),
-  signUp: async () => ({ error: new Error('Not implemented') }),
-  signOut: async () => {},
-  loading: true,
-  credits: 0,
-  refreshCredits: async () => {},
-  decrementCredit: async () => false,
-  addCredits: async () => false,
-};
-
-const AuthContext = createContext<AuthContextType>(defaultContext);
+export const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -44,6 +14,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState(0);
+
+  const refreshCredits = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_credits')
+        .select('credits')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (!error && data) {
+        setCredits(data.credits);
+      } else if (error && error.code === 'PGRST116') {
+        // Create credit record if it doesn't exist
+        const { data: newData } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: user.id,
+            credits: 0
+          })
+          .select()
+          .single();
+          
+        if (newData) {
+          setCredits(newData.credits);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing credits:', error);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -82,39 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
-
-  const refreshCredits = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_credits')
-        .select('credits')
-        .eq('user_id', user.id)
-        .single();
-        
-      if (!error && data) {
-        setCredits(data.credits);
-      } else if (error && error.code === 'PGRST116') {
-        // Create credit record if it doesn't exist
-        const { data: newData } = await supabase
-          .from('user_credits')
-          .insert({
-            user_id: user.id,
-            credits: 0
-          })
-          .select()
-          .single();
-          
-        if (newData) {
-          setCredits(newData.credits);
-        }
-      }
-    } catch (error) {
-      console.error('Error refreshing credits:', error);
-    }
-  };
+  }, [refreshCredits]);
 
   const decrementCredit = async (): Promise<boolean> => {
     if (!user || credits < 1) return false;
@@ -211,12 +181,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

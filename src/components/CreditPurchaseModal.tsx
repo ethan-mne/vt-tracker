@@ -4,7 +4,7 @@
 import React, { useState, useCallback } from "react";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { CreditCard, Euro } from "lucide-react";
 import { formatPrice } from "../lib/utils";
 import toast from "react-hot-toast";

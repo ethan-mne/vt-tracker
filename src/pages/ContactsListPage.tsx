@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase/client';
 import { Contact } from '../types/supabase';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import ContactCard from '../components/ContactCard';
-import { CreditCard, Plus, User } from 'lucide-react';
+import { Plus, User } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -19,7 +19,7 @@ const CreditPurchaseModal = dynamic(
 
 const ContactsListPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user, credits } = useAuth();
+  const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);

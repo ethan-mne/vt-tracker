@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { supabase } from "../utils/supabase/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthAuth";
 import { Contact } from "../types/supabase";
 import Button from "./ui/Button";
 import { Save, Loader2 } from "lucide-react";
