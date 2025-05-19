@@ -30,8 +30,8 @@ export async function createPaymentIntent(userId: string, amount: number) {
     }
   }
 
-  // Calculate price (credits × 50 euro each)
-  const pricePerCredit = 5000; // in cents (50 EUR)
+  // Calculate price (credits × 100 euro each)
+  const pricePerCredit = 10000; // in cents (100 EUR)
   const totalAmount = amount * pricePerCredit;
 
   const paymentIntent = await stripe.paymentIntents.create({
@@ -167,7 +167,7 @@ async function addCreditsToUser(userId: string, creditsToAdd: number) {
   // Create a payment record
   await supabase.from('payments').insert({
     user_id: userId,
-    amount: creditsToAdd * 50, // €50 per credit
+    amount: creditsToAdd * 100, // €100 per credit
     credits: creditsToAdd,
     status: 'completed',
     created_at: new Date().toISOString()

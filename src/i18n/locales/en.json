@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VT Tracker",
+    "appName": "Phœnix - Visite technique",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -62,9 +62,10 @@
   },
   "payment": {
     "purchaseCredits": "Purchase Credits",
-    "creditsForContact": "Credits for Contact Creation",
-    "creditDescription": "Each credit costs {{price}} and allows you to create one contact.",
+    "creditsForContact": "Credits for the creation of technical visits",
+    "creditDescription": "Each credit costs {{price}} and allows you to create a new technical visit.",
     "chooseCredits": "Choose number of credits:",
+    "credits": "credits",
     "pricePerCredit": "Price per credit:",
     "total": "Total:",
     "processing": "Processing...",

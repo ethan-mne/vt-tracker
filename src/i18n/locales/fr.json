@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VT Tracker",
+    "appName": "Phœnix - Visite technique",
     "loading": "Chargement...",
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -60,26 +60,12 @@
     "invalidCredentials": "Email ou mot de passe invalide",
     "emailInUse": "Cet email est déjà utilisé"
   },
-  "credits": {
-    "purchase": "Acheter des crédits",
-    "pricePerCredit": "Prix par crédit",
-    "total": "Total",
-    "selectAmount": "Sélectionner le montant",
-    "processing": "Traitement du paiement...",
-    "success": "Crédits achetés avec succès !",
-    "error": "Échec de l'achat des crédits",
-    "forContactCreation": "Crédits pour la création de contacts",
-    "eachCredit": "Chaque crédit coûte {{price}} et vous permet de créer un contact.",
-    "chooseNumber": "Choisissez le nombre de crédits :",
-    "pay": "Payer",
-    "paymentNotReady": "Le système de paiement n'est pas prêt ou l'utilisateur n'est pas connecté",
-    "selectValidAmount": "Veuillez sélectionner un montant valide de crédits"
-  },
   "payment": {
     "purchaseCredits": "Acheter des crédits",
-    "creditsForContact": "Crédits pour la création de contacts",
-    "creditDescription": "Chaque crédit coûte {{price}} et vous permet de créer un contact.",
+    "creditsForContact": "Crédits pour la création de visites techniques",
+    "creditDescription": "Chaque crédit coûte {{price}} et vous permet de créer une visite technique.",
     "chooseCredits": "Choisissez le nombre de crédits :",
+    "credits": "crédits",
     "pricePerCredit": "Prix par crédit :",
     "total": "Total :",
     "processing": "Traitement en cours...",

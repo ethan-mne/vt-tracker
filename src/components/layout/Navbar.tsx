@@ -41,10 +41,20 @@ const Navbar: React.FC<{ onOpenCreditModal: () => void }> = ({ onOpenCreditModal
           <div className="flex">
             <Link
               href="/"
-              className="flex-shrink-0 flex items-center text-blue-800 font-bold text-xl"
+              className="flex-shrink-0 flex items-center"
             >
-              <User className="h-6 w-6 mr-2" />
-              {t('common.appName')}
+              <img 
+                src="/logo.jpg" 
+                alt={t('common.appName')}
+                className="h-14 w-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <span className="text-xl font-bold text-blue-600 hidden">
+                {t('common.appName')}
+              </span>
             </Link>
           </div>
 
