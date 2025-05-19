@@ -10,13 +10,24 @@ export async function createPaymentIntent(userId: string, amount: number) {
   const stripe = new Stripe(stripe_key);
   const supabase = await createServerSideClient();
   const { data: userData, error: userError } = await supabase
-    .from("profiles")
+    .from("user_credits")
     .select("id")
     .eq("id", userId)
     .single();
 
   if (userError || !userData) {
-    throw new Error("User not found");
+    // If user credit record doesn't exist, create one
+    const { error: insertError } = await supabase
+      .from("user_credits")
+      .insert({
+        user_id: userId,
+        credits: 0
+      });
+      
+    if (insertError) {
+      console.error("Error creating user credits:", insertError);
+      throw new Error("Failed to initialize user credits");
+    }
   }
 
   // Calculate price (credits × 2 euro each)
