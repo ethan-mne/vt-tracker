@@ -92,3 +92,11 @@ CREATE POLICY "Users can insert their own credits record"
   FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
+
+-- Allow service role to manage user credits
+CREATE POLICY "Service role can manage user credits"
+  ON user_credits
+  FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);

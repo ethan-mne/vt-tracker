@@ -122,7 +122,7 @@ async function addCreditsToUser(userId: string, creditsToAdd: number) {
   // Create a payment record
   await supabase.from('payments').insert({
     user_id: userId,
-    amount: creditsToAdd * 2, // €2 per credit
+    amount: creditsToAdd * 100, // €100 per credit
     credits: creditsToAdd,
     status: 'completed',
     created_at: new Date().toISOString()

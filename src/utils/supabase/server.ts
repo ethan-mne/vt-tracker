@@ -7,15 +7,15 @@ import type { Database } from '../../types/supabase';
 export async function createServerSideClient() {
 	const cookieStore = await cookies();
 	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-	const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+	const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 	
-	if (!supabaseUrl || !supabaseAnonKey) {
+	if (!supabaseUrl || !supabaseServiceKey) {
 		throw new Error('Missing Supabase environment variables');
 	}
 	
 	return createServerClient<Database>(
 		supabaseUrl,
-		supabaseAnonKey,
+		supabaseServiceKey,
 		{
 			cookies: {
 				getAll: () => cookieStore.getAll(),
