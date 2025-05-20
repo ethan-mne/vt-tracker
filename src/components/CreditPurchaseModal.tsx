@@ -103,7 +103,7 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
         return;
       }
 
-      if (selectedAmount <= 0) {
+      if (selectedAmount <= 0 || !Number.isInteger(selectedAmount)) {
         setErrorMessage(t("payment.invalidAmount"));
         return;
       }
@@ -126,7 +126,7 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
           throw new Error(t("payment.cardElementNotFound"));
         }
 
-        const { error } = await stripe.confirmCardPayment(clientSecret, {
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
           payment_method: {
             card: cardElement,
             billing_details: {
@@ -137,6 +137,10 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
         if (error) {
           throw new Error(error.message || t("payment.failed"));
+        }
+
+        if (!paymentIntent) {
+          throw new Error(t("payment.unknownError"));
         }
 
         const paymentStatus = await checkPaymentStatus(paymentIntentId);
@@ -151,9 +155,8 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
           throw new Error(t("payment.statusError", { message: paymentStatus.message }));
         }
       } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : t("payment.unknownError")
-        );
+        const errorMessage = error instanceof Error ? error.message : t("payment.unknownError");
+        setErrorMessage(errorMessage);
         toast.error(t("payment.failedTryAgain"));
       } finally {
         setIsProcessing(false);

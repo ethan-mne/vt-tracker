@@ -91,7 +91,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         if (error) throw error;
         
         toast.success(t('contact.updated'));
-        router.push("/");
+        // Use replace instead of push for mobile
+        router.replace("/");
       } else {
         // Create new contact
         // First check if user has credits
@@ -99,6 +100,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         
         if (!hasCredit) {
           toast.error(t('contact.noCredits'));
+          setSubmitting(false);
           return;
         }
         
@@ -112,12 +114,12 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         if (error) throw error;
         
         toast.success(t('contact.created'));
-        router.push("/");
+        // Use replace instead of push for mobile
+        router.replace("/");
       }
     } catch (error) {
       console.error("Error saving contact:", error);
       toast.error(t('contact.failedSave'));
-    } finally {
       setSubmitting(false);
     }
   };

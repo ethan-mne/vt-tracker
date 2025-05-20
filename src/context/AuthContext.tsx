@@ -48,14 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user]);
 
   useEffect(() => {
-    console.log('AuthProvider: Initializing...'); // Debug log
-
     const fetchSession = async () => {
       try {
-        console.log('AuthProvider: Fetching session...'); // Debug log
         const { data } = await supabase.auth.getSession();
-        console.log('AuthProvider: Session data:', data); // Debug log
-        
         setSession(data.session);
         setUser(data.session?.user ?? null);
         
@@ -63,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           await refreshCredits();
         }
       } catch (error) {
-        console.error('AuthProvider: Error fetching session:', error);
+        console.error('Error fetching session:', error);
       } finally {
         setLoading(false);
       }
@@ -73,8 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        console.log('AuthProvider: Auth state changed:', { event: _event, session }); // Debug log
-        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -89,7 +82,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     return () => {
-      console.log('AuthProvider: Cleaning up...'); // Debug log
       authListener.subscription.unsubscribe();
     };
   }, [refreshCredits]);
@@ -139,8 +131,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         credits,
         refreshCredits,
         decrementCredit: async (): Promise<boolean> => {
-          if (!user || credits < 1) return false;
+          if (!user || credits < 1) {
+            console.log('Cannot decrement credits:', { user: !!user, credits });
+            return false;
+          }
           
+          console.log('Attempting to decrement credits. Current credits:', credits);
           try {
             const { error } = await supabase
               .from('user_credits')
@@ -148,9 +144,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               .eq('user_id', user.id);
               
             if (!error) {
+              console.log('Successfully decremented credits');
               setCredits(prev => prev - 1);
               return true;
             }
+            console.error('Error from Supabase when decrementing credits:', error);
             return false;
           } catch (error) {
             console.error('Error decrementing credit:', error);
