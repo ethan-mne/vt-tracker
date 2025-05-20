@@ -118,7 +118,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           }
 
           // Create the contact with timeout and retry logic
-          const result = await executeWithRetry(async () => {
+          const { data, error } = await executeWithRetry(async () => {
             // First verify the connection is still alive
             const { error: pingError } = await supabase.from('contacts').select('count').limit(1);
             if (pingError) {
@@ -160,6 +160,10 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
 
             return response;
           }, 3, 1000, 15000);
+          
+          if (error) {
+            throw error;
+          }
           
           toast.success(t('contact.created'));
           router.replace("/");
