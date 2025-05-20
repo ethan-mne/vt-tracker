@@ -267,7 +267,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="phone"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          {t('contact.phone')}
+          {t('contact.phone')} <span className="text-red-500">*</span>
         </label>
         <input
           type="tel"
