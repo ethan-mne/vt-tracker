@@ -8,6 +8,7 @@ import { useAuth } from "../context/useAuth";
 import { Contact } from "../types/supabase";
 import Button from "./ui/Button";
 import { Save, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ContactFormProps {
   contact?: Contact;
@@ -33,6 +34,7 @@ const initialFormValues: FormValues = {
 };
 
 const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false }) => {
+  const { t } = useTranslation();
   const [formValues, setFormValues] = useState<FormValues>(
     contact
       ? {
@@ -63,13 +65,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
     e.preventDefault();
     
     if (!user) {
-      toast.error("You must be logged in to save contacts");
+      toast.error(t('contact.mustBeLoggedIn'));
       return;
     }
     
     // Validate required fields
     if (!formValues.first_name || !formValues.last_name) {
-      toast.error("First name and last name are required");
+      toast.error(t('contact.firstLastNameRequired'));
       return;
     }
     
@@ -88,7 +90,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           
         if (error) throw error;
         
-        toast.success("Contact updated successfully");
+        toast.success(t('contact.updated'));
         router.push("/");
       } else {
         // Create new contact
@@ -96,7 +98,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         const hasCredit = await decrementCredit();
         
         if (!hasCredit) {
-          toast.error("You don't have enough credits to create a new contact");
+          toast.error(t('contact.noCredits'));
           return;
         }
         
@@ -109,12 +111,12 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         
         if (error) throw error;
         
-        toast.success("Contact created successfully");
+        toast.success(t('contact.created'));
         router.push("/");
       }
     } catch (error) {
       console.error("Error saving contact:", error);
-      toast.error("Failed to save contact");
+      toast.error(t('contact.failedSave'));
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +130,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
             htmlFor="first_name"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            First Name <span className="text-red-500">*</span>
+            {t('contact.firstName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -145,7 +147,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
             htmlFor="last_name"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Last Name <span className="text-red-500">*</span>
+            {t('contact.lastName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -164,7 +166,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="email"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Email
+          {t('contact.email')}
         </label>
         <input
           type="email"
@@ -181,7 +183,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="phone"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Phone Number
+          {t('contact.phone')}
         </label>
         <input
           type="tel"
@@ -198,7 +200,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="address"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Address
+          {t('contact.address')}
         </label>
         <input
           type="text"
@@ -215,7 +217,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="notes"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Notes
+          {t('contact.notes')}
         </label>
         <textarea
           id="notes"
@@ -227,25 +229,25 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         />
       </div>
 
-      <div className="flex gap-3 justify-end pt-4">
+      <div className="flex justify-end space-x-3">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push("/")}
           disabled={submitting}
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button type="submit" disabled={submitting}>
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {t('contact.saving')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              {isEditing ? "Update Contact" : "Save Contact"}
+              {isEditing ? t('contact.update') : t('contact.save')}
             </>
           )}
         </Button>

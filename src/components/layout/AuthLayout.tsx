@@ -12,7 +12,7 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // React Router-specific code is removed since we use Next.js router now
   React.useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && window.location.pathname === '/sign-in') {
       router.push('/');
     }
   }, [user, loading, router]);

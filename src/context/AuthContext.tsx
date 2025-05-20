@@ -48,9 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user]);
 
   useEffect(() => {
+    console.log('AuthProvider: Initializing...'); // Debug log
+
     const fetchSession = async () => {
       try {
+        console.log('AuthProvider: Fetching session...'); // Debug log
         const { data } = await supabase.auth.getSession();
+        console.log('AuthProvider: Session data:', data); // Debug log
+        
         setSession(data.session);
         setUser(data.session?.user ?? null);
         
@@ -58,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           await refreshCredits();
         }
       } catch (error) {
-        console.error('Error fetching session:', error);
+        console.error('AuthProvider: Error fetching session:', error);
       } finally {
         setLoading(false);
       }
@@ -68,6 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log('AuthProvider: Auth state changed:', { event: _event, session }); // Debug log
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -82,100 +89,96 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     return () => {
+      console.log('AuthProvider: Cleaning up...'); // Debug log
       authListener.subscription.unsubscribe();
     };
   }, [refreshCredits]);
 
-  const decrementCredit = async (): Promise<boolean> => {
-    if (!user || credits < 1) return false;
-    
-    try {
-      const { error } = await supabase
-        .from('user_credits')
-        .update({ credits: credits - 1, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-        
-      if (!error) {
-        setCredits(prev => prev - 1);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error decrementing credit:', error);
-      return false;
-    }
-  };
-
-  const addCredits = async (amount: number): Promise<boolean> => {
-    if (!user || amount <= 0) return false;
-    
-    try {
-      const { error } = await supabase
-        .from('user_credits')
-        .update({ 
-          credits: credits + amount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
-        
-      if (!error) {
-        setCredits(prev => prev + amount);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error adding credits:', error);
-      return false;
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      return { error };
-    } catch (error) {
-      console.error('Error signing in:', error);
-      return { error: error as Error };
-    }
-  };
-
-  const signUp = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      return { error };
-    } catch (error) {
-      console.error('Error signing up:', error);
-      return { error: error as Error };
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  // Debug log for state changes
+  useEffect(() => {
+    console.log('AuthProvider: State updated:', { user, loading, session });
+  }, [user, loading, session]);
 
   return (
     <AuthContext.Provider
       value={{
         session,
         user,
-        signIn,
-        signUp,
-        signOut,
+        signIn: async (email: string, password: string) => {
+          try {
+            const { error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            return { error };
+          } catch (error) {
+            console.error('Error signing in:', error);
+            return { error: error as Error };
+          }
+        },
+        signUp: async (email: string, password: string) => {
+          try {
+            const { error } = await supabase.auth.signUp({
+              email,
+              password,
+            });
+            return { error };
+          } catch (error) {
+            console.error('Error signing up:', error);
+            return { error: error as Error };
+          }
+        },
+        signOut: async () => {
+          try {
+            await supabase.auth.signOut();
+          } catch (error) {
+            console.error('Error signing out:', error);
+          }
+        },
         loading,
         credits,
         refreshCredits,
-        decrementCredit,
-        addCredits
+        decrementCredit: async (): Promise<boolean> => {
+          if (!user || credits < 1) return false;
+          
+          try {
+            const { error } = await supabase
+              .from('user_credits')
+              .update({ credits: credits - 1, updated_at: new Date().toISOString() })
+              .eq('user_id', user.id);
+              
+            if (!error) {
+              setCredits(prev => prev - 1);
+              return true;
+            }
+            return false;
+          } catch (error) {
+            console.error('Error decrementing credit:', error);
+            return false;
+          }
+        },
+        addCredits: async (amount: number): Promise<boolean> => {
+          if (!user || amount <= 0) return false;
+          
+          try {
+            const { error } = await supabase
+              .from('user_credits')
+              .update({ 
+                credits: credits + amount,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id);
+              
+            if (!error) {
+              setCredits(prev => prev + amount);
+              return true;
+            }
+            return false;
+          } catch (error) {
+            console.error('Error adding credits:', error);
+            return false;
+          }
+        }
       }}
     >
       {children}

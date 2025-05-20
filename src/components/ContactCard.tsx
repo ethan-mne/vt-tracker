@@ -7,6 +7,7 @@ import { supabase } from '../utils/supabase/client';
 import { toast } from 'react-hot-toast';
 import { Phone, Mail, MapPin, FileText, Trash2, Edit, UserX } from 'lucide-react';
 import Button from './ui/Button';
+import { useTranslation } from 'react-i18next';
 
 interface ContactCardProps {
   contact: Contact;
@@ -14,10 +15,11 @@ interface ContactCardProps {
 }
 
 const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => {
+  const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this contact?')) {
+    if (!confirm(t('contact.deleteConfirm'))) {
       return;
     }
     
@@ -30,11 +32,11 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => {
         
       if (error) throw error;
       
-      toast.success('Contact deleted');
+      toast.success(t('contact.deleted'));
       onDelete(contact.id);
     } catch (error) {
       console.error('Error deleting contact:', error);
-      toast.error('Failed to delete contact');
+      toast.error(t('contact.failedDelete'));
     } finally {
       setDeleting(false);
     }
@@ -42,7 +44,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-5">
+      <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
@@ -50,7 +52,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => {
             </h3>
             {contact.created_at && (
               <p className="text-xs text-gray-500 mt-1">
-                Added on {new Date(contact.created_at).toLocaleDateString()}
+                {t('contact.addedOn')} {new Date(contact.created_at).toLocaleDateString()}
               </p>
             )}
           </div>

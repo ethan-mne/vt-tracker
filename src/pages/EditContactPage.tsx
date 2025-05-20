@@ -6,12 +6,14 @@ import ContactForm from '../components/ContactForm';
 import { Contact } from '../types/supabase';
 import { supabase } from '../utils/supabase/client';
 import { useAuth } from '../context/useAuth';
+import { useTranslation } from 'react-i18next';
 
 interface EditContactPageProps {
   id?: string;
 }
 
 const EditContactPage: React.FC<EditContactPageProps> = ({ id }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
@@ -42,21 +44,21 @@ const EditContactPage: React.FC<EditContactPageProps> = ({ id }) => {
         setContact(data);
       } catch (err) {
         console.error('Error fetching contact:', err);
-        setError('Failed to load contact information');
+        setError(t('contact.failedLoad'));
       } finally {
         setLoading(false);
       }
     };
     
     fetchContact();
-  }, [id, user, router]);
+  }, [id, user, router, t]);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Loading contact...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -78,7 +80,7 @@ const EditContactPage: React.FC<EditContactPageProps> = ({ id }) => {
 
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Contact</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('contact.edit')}</h1>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <ContactForm contact={contact} isEditing />
       </div>

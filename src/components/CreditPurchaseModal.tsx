@@ -24,7 +24,7 @@ const CREDIT_PACKAGES = [5, 10, 15, 20];
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
-      fontSize: "16px",
+      fontSize: "14px",
       color: "#424770",
       "::placeholder": { color: "#aab7c4" },
     },
@@ -39,21 +39,21 @@ const CreditPackages: React.FC<{
   onSelect: (amount: number) => void;
   t: (key: string) => string;
 }> = ({ packages, selected, onSelect, t }) => (
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
     {packages.map((amount) => (
       <button
         key={amount}
         type="button"
         onClick={() => onSelect(amount)}
-        className={`flex flex-col items-center justify-center p-4 border rounded-lg transition-all ${
+        className={`flex flex-col items-center justify-center p-2 sm:p-4 border rounded-lg transition-all ${
           selected === amount
             ? "border-blue-600 bg-blue-50 ring-2 ring-blue-200"
             : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
         }`}
       >
-        <span className="text-2xl font-bold">{amount}</span>
-        <span className="text-gray-600 text-sm">{t("payment.credits")}</span>
-        <span className="mt-1 text-blue-700 font-medium">
+        <span className="text-xl sm:text-2xl font-bold">{amount}</span>
+        <span className="text-gray-600 text-xs sm:text-sm">{t("payment.credits")}</span>
+        <span className="mt-1 text-blue-700 text-sm sm:text-base font-medium">
           {formatPrice(amount * CREDIT_PRICE)}
         </span>
       </button>
@@ -68,12 +68,12 @@ const PaymentSummary: React.FC<{
   selectedAmount,
   t
 }) => (
-  <div className="bg-gray-50 p-4 rounded-lg">
-    <div className="flex justify-between items-center">
+  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+    <div className="flex justify-between items-center text-sm">
       <span className="text-gray-700">{t("payment.pricePerCredit")}</span>
       <span className="font-medium">{formatPrice(CREDIT_PRICE)}</span>
     </div>
-    <div className="flex justify-between items-center mt-2 text-lg font-medium">
+    <div className="flex justify-between items-center mt-2 text-base sm:text-lg font-medium">
       <span>{t("payment.total")}</span>
       <span className="text-blue-700">
         {formatPrice(selectedAmount * CREDIT_PRICE)}
@@ -167,14 +167,14 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t("payment.purchaseCredits")}>
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div className="flex items-center justify-center p-6 bg-blue-50 rounded-lg">
-            <CreditCard className="w-12 h-12 text-blue-600 mr-4" />
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center justify-center p-4 sm:p-6 bg-blue-50 rounded-lg">
+            <CreditCard className="w-8 h-8 sm:w-12 sm:h-12 text-blue-600 mr-3 sm:mr-4" />
             <div>
               <h3 className="text-sm font-semibold text-gray-900">
                 {t("payment.creditsForContact")}
               </h3>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 {t("payment.creditDescription", {
                   price: formatPrice(CREDIT_PRICE)
                 })}
@@ -182,8 +182,8 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="font-medium text-gray-900">
+          <div className="space-y-2 sm:space-y-3">
+            <h4 className="font-medium text-gray-900 text-sm sm:text-base">
               {t("payment.chooseCredits")}
             </h4>
             <CreditPackages
@@ -197,21 +197,22 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
           <PaymentSummary selectedAmount={selectedAmount} t={t} />
 
           {errorMessage && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
+            <div className="bg-red-50 text-red-700 p-2 sm:p-3 rounded-md text-xs sm:text-sm">
               {errorMessage}
             </div>
           )}
 
-          <div className="p-4 bg-white rounded-lg border">
+          <div className="p-3 sm:p-4 bg-white rounded-lg border">
             <CardElement options={CARD_ELEMENT_OPTIONS} />
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-end">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={isProcessing}
               type="button"
+              className="w-full sm:w-auto"
             >
               {t("common.cancel")}
             </Button>
@@ -219,7 +220,7 @@ const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
               type="submit"
               loading={isProcessing}
               disabled={!stripe || isProcessing}
-              className="gap-2"
+              className="w-full sm:w-auto gap-2"
             >
               <Euro className="w-4 h-4" />
               {isProcessing

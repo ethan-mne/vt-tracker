@@ -89,12 +89,12 @@ const Navbar: React.FC<{ onOpenCreditModal: () => void }> = ({ onOpenCreditModal
                   <span>{credits} {t('common.credits')}</span>
                 </Button>
 
-                <Link href="/contacts/new">
+                {/* <Link href="/contacts/new">
                   <Button size="sm" className="gap-1">
                     <Plus className="h-4 w-4" />
                     {t('common.newContact')}
                   </Button>
-                </Link>
+                </Link> */}
 
                 <Button
                   variant="outline"

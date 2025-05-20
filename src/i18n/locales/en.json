@@ -14,7 +14,13 @@
     "language": "Language",
     "english": "English",
     "french": "French",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "createNewContact": "Create New Contact",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "noResults": "No results found",
+    "allRightsReserved": "All rights reserved"
   },
   "contact": {
     "firstName": "First Name",
@@ -34,6 +40,9 @@
     "edit": "Edit Contact",
     "delete": "Delete Contact",
     "deleteConfirm": "Are you sure you want to delete this contact?",
+    "deleted": "Contact deleted successfully",
+    "failedDelete": "Failed to delete contact",
+    "addedOn": "Added on",
     "noContacts": "No contacts found",
     "search": "Search contacts...",
     "mustBeLoggedIn": "You must be logged in to save contacts",
@@ -43,7 +52,11 @@
     "failedSave": "Failed to save contact",
     "saving": "Saving...",
     "update": "Update Contact",
-    "save": "Save Contact"
+    "save": "Save Contact",
+    "noCredits": "You don't have enough credits to create a new contact",
+    "failedCreate": "Failed to create contact",
+    "failedUpdate": "Failed to update contact",
+    "failedLoad": "Failed to load contact information"
   },
   "auth": {
     "email": "Email",

@@ -19,15 +19,22 @@ const CreditPurchaseModal = dynamic(
 
 const ContactsListPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
 
   useEffect(() => {
+    console.log('Auth state:', { user, authLoading }); // Debug log
+
     const fetchContacts = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log('No user, skipping fetch'); // Debug log
+        setLoading(false);
+        return;
+      }
       
+      console.log('Fetching contacts for user:', user.id); // Debug log
       try {
         const { data, error } = await supabase
           .from('contacts')
@@ -36,9 +43,11 @@ const ContactsListPage: React.FC = () => {
           .order('created_at', { ascending: false });
           
         if (error) {
+          console.error('Supabase error:', error); // Debug log
           throw error;
         }
         
+        console.log('Fetched contacts:', data); // Debug log
         setContacts(data || []);
       } catch (err) {
         console.error('Error fetching contacts:', err);
@@ -48,7 +57,7 @@ const ContactsListPage: React.FC = () => {
     };
     
     fetchContacts();
-  }, [user]);
+  }, [user, authLoading]);
 
   const refreshContacts = async () => {
     if (!user) return;
@@ -73,40 +82,44 @@ const ContactsListPage: React.FC = () => {
     }
   };
 
+  console.log('Render state:', { loading, authLoading, user, contacts }); // Debug log
+
+  // Show loading state while auth is loading or contacts are loading
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">{t('common.loading', { defaultValue: 'Loading authentication...' })}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">{t('common.loading', { defaultValue: 'Loading contacts...' })}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{t('common.appName', { defaultValue: 'My Contacts' })}</h1>
-        {/* <div className="flex items-center space-x-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-700 font-normal"
-            onClick={() => setIsCreditModalOpen(true)}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            <span>
-              {credits} {t('common.credits')}
-            </span>
+        <Link href="/contacts/new">
+          <Button size="sm" className="gap-1">
+            <Plus className="h-4 w-4" />
+            {t('common.newContact')}
           </Button>
-          
-          <Link href="/contacts/new">
-            <Button size="sm" className="gap-1">
-              <Plus className="h-4 w-4" />
-              {t('common.newContact')}
-            </Button>
-          </Link>
-        </div> */}
+        </Link>
       </div>
       
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">{t('common.loading', { defaultValue: 'Loading contacts...' })}</p>
-          </div>
-        </div>
-      ) : contacts.length > 0 ? (
+      {contacts.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {contacts.map((contact) => (
             <ContactCard key={contact.id} contact={contact} onDelete={refreshContacts} />

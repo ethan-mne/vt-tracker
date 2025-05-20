@@ -14,7 +14,13 @@
     "language": "Langue",
     "english": "Anglais",
     "french": "Français",
-    "spanish": "Espagnol"
+    "spanish": "Espagnol",
+    "createNewContact": "Créer un Nouveau Contact",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat trouvé",
+    "allRightsReserved": "Tous droits réservés"
   },
   "contact": {
     "firstName": "Prénom",
@@ -31,9 +37,12 @@
     "invalidEmail": "Veuillez entrer une adresse email valide",
     "invalidPhone": "Veuillez entrer un numéro de téléphone valide",
     "create": "Créer un contact",
-    "edit": "Modifier le contact",
+    "edit": "Modifier le Contact",
     "delete": "Supprimer le contact",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce contact ?",
+    "deleted": "Contact supprimé avec succès",
+    "failedDelete": "Échec de la suppression du contact",
+    "addedOn": "Ajouté le",
     "noContacts": "Aucun contact trouvé",
     "search": "Rechercher des contacts...",
     "mustBeLoggedIn": "Vous devez être connecté pour enregistrer des contacts",
@@ -43,7 +52,11 @@
     "failedSave": "Échec de l'enregistrement du contact",
     "saving": "Enregistrement...",
     "update": "Mettre à jour le contact",
-    "save": "Enregistrer le contact"
+    "save": "Enregistrer le contact",
+    "noCredits": "Vous n'avez pas assez de crédits pour créer un nouveau contact",
+    "failedCreate": "Échec de la création du contact",
+    "failedUpdate": "Échec de la mise à jour du contact",
+    "failedLoad": "Échec du chargement des informations du contact"
   },
   "auth": {
     "email": "Email",
