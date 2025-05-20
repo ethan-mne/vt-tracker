@@ -20,9 +20,11 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <title>Phœnix - Visite technique - Manage Your Technical Visits</title>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Phœnix - Visite technique, helps you manage your technical visits with ease." />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>

@@ -58,6 +58,12 @@
     "failedUpdate": "Échec de la mise à jour du contact",
     "failedLoad": "Échec du chargement des informations du contact"
   },
+  "contacts": {
+    "title": "Contacts",
+    "addNew": "Ajouter un Contact",
+    "noContacts": "Aucun contact trouvé",
+    "createFirst": "Créer votre premier contact"
+  },
   "auth": {
     "email": "Email",
     "password": "Mot de passe",

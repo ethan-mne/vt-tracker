@@ -12,8 +12,12 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // React Router-specific code is removed since we use Next.js router now
   React.useEffect(() => {
-    if (user && !loading && window.location.pathname === '/sign-in') {
-      router.push('/');
+    if (user && !loading) {
+      const currentPath = window.location.pathname;
+      // Only redirect if we're on an auth page
+      if (currentPath === '/sign-in' || currentPath === '/sign-up') {
+        router.replace('/');
+      }
     }
   }, [user, loading, router]);
 
@@ -59,7 +63,7 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <footer className="bg-white py-4 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} {t('common.appName')}. {t('common.allRightsReserved')}
+            &copy; 2024 {t('common.appName')}. {t('common.allRightsReserved')}
           </p>
         </div>
       </footer>

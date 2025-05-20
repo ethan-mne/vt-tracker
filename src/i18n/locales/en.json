@@ -112,5 +112,11 @@
     "title": "Page Not Found",
     "description": "We couldn't find the page you're looking for. It might have been moved or deleted.",
     "returnHome": "Return to Home"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "addNew": "Add New Contact",
+    "noContacts": "No contacts found",
+    "createFirst": "Create your first contact"
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { supabase } from "../utils/supabase/client";
+import { supabase, executeWithRetry, isOnline, waitForConnection } from "../utils/supabase/client";
 import { useAuth } from "../context/useAuth";
 import { Contact } from "../types/supabase";
 import Button from "./ui/Button";
@@ -48,7 +48,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
       : initialFormValues
   );
   const [submitting, setSubmitting] = useState(false);
-  const { user, decrementCredit } = useAuth();
+  const { user, decrementCredit, refreshCredits } = useAuth();
   const router = useRouter();
 
   const handleChange = (
@@ -70,8 +70,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
     }
     
     // Validate required fields
-    if (!formValues.first_name || !formValues.last_name) {
+    if (!formValues.first_name || !formValues.last_name || !formValues.phone) {
       toast.error(t('contact.firstLastNameRequired'));
+      return;
+    }
+    
+    if (!isOnline()) {
+      toast.error('No internet connection. Please check your connection and try again.');
       return;
     }
     
@@ -80,18 +85,20 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
     try {
       if (isEditing && contact) {
         // Update existing contact
-        const { error } = await supabase
-          .from("contacts")
-          .update({
-            ...formValues,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", contact.id);
+        const result = await executeWithRetry(async () => {
+          const response = await supabase
+            .from("contacts")
+            .update({
+              ...formValues,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", contact.id);
+          return response;
+        });
           
-        if (error) throw error;
+        if (result.error) throw result.error;
         
         toast.success(t('contact.updated'));
-        // Use replace instead of push for mobile
         router.replace("/");
       } else {
         // Create new contact
@@ -100,26 +107,97 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         
         if (!hasCredit) {
           toast.error(t('contact.noCredits'));
-          setSubmitting(false);
           return;
         }
         
-        const { error } = await supabase.from("contacts").insert({
-          ...formValues,
-          created_by: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
-        if (error) throw error;
-        
-        toast.success(t('contact.created'));
-        // Use replace instead of push for mobile
-        router.replace("/");
+        try {
+          // Wait for connection with timeout
+          const { connected, error: connectionError } = await waitForConnection();
+          if (!connected) {
+            throw new Error(connectionError || 'Unable to connect to the database. Please check your internet connection and try again.');
+          }
+
+          // Create the contact with timeout and retry logic
+          const result = await executeWithRetry(async () => {
+            // First verify the connection is still alive
+            const { error: pingError } = await supabase.from('contacts').select('count').limit(1);
+            if (pingError) {
+              throw new Error('Database connection lost. Please try again.');
+            }
+
+            // Attempt to create the contact
+            const response = await supabase.from("contacts").insert({
+              first_name: formValues.first_name,
+              last_name: formValues.last_name,
+              email: formValues.email || null,
+              phone: formValues.phone || null,
+              address: formValues.address || null,
+              zip_code: null,
+              note: formValues.note || null,
+              latitude: null,
+              longitude: null,
+              created_by: user.id,
+              created_at: new Date().toISOString()
+            });
+
+            // Log the response for debugging
+            console.log('Contact creation response:', response);
+
+            if (response.error) {
+              // Handle specific error cases
+              if (response.error.code === '23505') {
+                throw new Error('A contact with this information already exists');
+              } else if (response.error.code === '23503') {
+                throw new Error('Invalid user reference');
+              } else if (response.error.message?.includes('timeout')) {
+                throw new Error('Request timeout. Please try again.');
+              } else if (response.error.message?.includes('connection')) {
+                throw new Error('Database connection lost. Please try again.');
+              } else {
+                throw new Error(`Failed to create contact: ${response.error.message}`);
+              }
+            }
+
+            return response;
+          }, 3, 1000, 15000);
+          
+          toast.success(t('contact.created'));
+          router.replace("/");
+        } catch (error) {
+          // If contact creation fails, ensure credit is refunded
+          await refreshCredits();
+          console.error("Error saving contact:", error);
+          if (error instanceof Error) {
+            if (error.message.includes('Network connection lost')) {
+              toast.error('Network connection lost. Please check your internet connection and try again.');
+            } else if (error.message.includes('timeout')) {
+              toast.error('Request timeout. Please try again.');
+            } else if (error.message.includes('connection')) {
+              toast.error('Database connection lost. Please try again.');
+            } else {
+              toast.error(error.message || t('contact.failedSave'));
+            }
+          } else {
+            toast.error(t('contact.failedSave'));
+          }
+        }
       }
     } catch (error) {
       console.error("Error saving contact:", error);
-      toast.error(t('contact.failedSave'));
+      if (error instanceof Error) {
+        if (error.message.includes('Network connection lost')) {
+          toast.error('Network connection lost. Please check your internet connection and try again.');
+        } else if (error.message.includes('timeout')) {
+          toast.error('Request timeout. Please try again.');
+        } else if (error.message.includes('connection')) {
+          toast.error('Database connection lost. Please try again.');
+        } else {
+          toast.error(error.message || t('contact.failedSave'));
+        }
+      } else {
+        toast.error(t('contact.failedSave'));
+      }
+    } finally {
       setSubmitting(false);
     }
   };
@@ -193,6 +271,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           name="phone"
           value={formValues.phone}
           onChange={handleChange}
+          required
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
         />
       </div>

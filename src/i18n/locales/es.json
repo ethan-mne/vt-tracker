@@ -97,5 +97,26 @@
     "title": "Página no encontrada",
     "description": "No pudimos encontrar la página que estás buscando. Es posible que haya sido movida o eliminada.",
     "returnHome": "Volver al inicio"
+  },
+  "contacts": {
+    "title": "Contactos",
+    "addNew": "Añadir Contacto",
+    "noContacts": "No se encontraron contactos",
+    "createFirst": "Crear tu primer contacto"
+  },
+  "credits": {
+    "purchase": "Comprar Créditos",
+    "pricePerCredit": "Precio por crédito",
+    "total": "Total",
+    "selectAmount": "Seleccionar cantidad",
+    "processing": "Procesando pago...",
+    "success": "¡Créditos comprados con éxito!",
+    "error": "Error al comprar créditos",
+    "forContactCreation": "Créditos para creación de contactos",
+    "eachCredit": "Cada crédito cuesta {{price}} y te permite crear un contacto.",
+    "chooseNumber": "Elige el número de créditos:",
+    "pay": "Pagar",
+    "paymentNotReady": "El sistema de pago no está listo o el usuario no ha iniciado sesión",
+    "selectValidAmount": "Por favor, selecciona una cantidad válida de créditos"
   }
 }
