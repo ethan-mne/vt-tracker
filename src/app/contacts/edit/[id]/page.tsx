@@ -1,11 +1,10 @@
 import AppLayout from '../../../../components/layout/AppLayout';
 import EditContactPage from '../../../../pages/EditContactPage';
 
-export default async function EditContact({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function EditContact({ params }: { params: { id: string } }) {
   return (
     <AppLayout>
-      <EditContactPage id={id} />
+      <EditContactPage id={params.id} />
     </AppLayout>
   );
 } 

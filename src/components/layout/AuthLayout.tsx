@@ -3,16 +3,21 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/useAuth';
-import { User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   // React Router-specific code is removed since we use Next.js router now
   React.useEffect(() => {
     if (user && !loading) {
-      router.push('/');
+      const currentPath = window.location.pathname;
+      // Only redirect if we're on an auth page
+      if (currentPath === '/sign-in' || currentPath === '/sign-up') {
+        router.replace('/');
+      }
     }
   }, [user, loading, router]);
 
@@ -33,12 +38,18 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-full bg-blue-800 flex items-center justify-center">
-              <User className="h-8 w-8 text-white" />
-            </div>
+            <img 
+              src="/logo.jpg" 
+              alt={t('common.appName')}
+              className="h-14 w-auto"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            VT Tracker
+            {t('common.appName')}
           </h2>
         </div>
 
@@ -52,7 +63,7 @@ const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <footer className="bg-white py-4 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} VT Tracker. All rights reserved.
+            &copy; 2024 {t('common.appName')}. {t('common.allRightsReserved')}
           </p>
         </div>
       </footer>
