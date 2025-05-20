@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { supabase } from "../utils/supabase/client";
+import { supabase, executeWithRetry, isOnline, waitForConnection } from "../utils/supabase/client";
 import { useAuth } from "../context/useAuth";
 import { Contact } from "../types/supabase";
 import Button from "./ui/Button";
 import { Save, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ContactFormProps {
   contact?: Contact;
@@ -33,6 +34,7 @@ const initialFormValues: FormValues = {
 };
 
 const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false }) => {
+  const { t } = useTranslation();
   const [formValues, setFormValues] = useState<FormValues>(
     contact
       ? {
@@ -46,7 +48,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
       : initialFormValues
   );
   const [submitting, setSubmitting] = useState(false);
-  const { user, decrementCredit } = useAuth();
+  const { user, decrementCredit, refreshCredits } = useAuth();
   const router = useRouter();
 
   const handleChange = (
@@ -63,13 +65,18 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
     e.preventDefault();
     
     if (!user) {
-      toast.error("You must be logged in to save contacts");
+      toast.error(t('contact.mustBeLoggedIn'));
       return;
     }
     
     // Validate required fields
-    if (!formValues.first_name || !formValues.last_name) {
-      toast.error("First name and last name are required");
+    if (!formValues.first_name || !formValues.last_name || !formValues.phone) {
+      toast.error(t('contact.firstLastNameRequired'));
+      return;
+    }
+    
+    if (!isOnline()) {
+      toast.error('No internet connection. Please check your connection and try again.');
       return;
     }
     
@@ -78,43 +85,122 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
     try {
       if (isEditing && contact) {
         // Update existing contact
-        const { error } = await supabase
-          .from("contacts")
-          .update({
-            ...formValues,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", contact.id);
+        const result = await executeWithRetry(async () => {
+          const response = await supabase
+            .from("contacts")
+            .update({
+              ...formValues,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", contact.id);
+          return response;
+        });
           
-        if (error) throw error;
+        if (result.error) throw result.error;
         
-        toast.success("Contact updated successfully");
-        router.push("/");
+        toast.success(t('contact.updated'));
+        router.replace("/");
       } else {
         // Create new contact
         // First check if user has credits
         const hasCredit = await decrementCredit();
         
         if (!hasCredit) {
-          toast.error("You don't have enough credits to create a new contact");
+          toast.error(t('contact.noCredits'));
           return;
         }
         
-        const { error } = await supabase.from("contacts").insert({
-          ...formValues,
-          created_by: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
-        if (error) throw error;
-        
-        toast.success("Contact created successfully");
-        router.push("/");
+        try {
+          // Wait for connection with timeout
+          const { connected, error: connectionError } = await waitForConnection();
+          if (!connected) {
+            throw new Error(connectionError || 'Unable to connect to the database. Please check your internet connection and try again.');
+          }
+
+          // Create the contact with timeout and retry logic
+          const { error } = await executeWithRetry(async () => {
+            // First verify the connection is still alive
+            const { error: pingError } = await supabase.from('contacts').select('count').limit(1);
+            if (pingError) {
+              throw new Error('Database connection lost. Please try again.');
+            }
+
+            // Attempt to create the contact
+            const response = await supabase.from("contacts").insert({
+              first_name: formValues.first_name,
+              last_name: formValues.last_name,
+              email: formValues.email || null,
+              phone: formValues.phone || null,
+              address: formValues.address || null,
+              zip_code: null,
+              note: formValues.note || null,
+              latitude: null,
+              longitude: null,
+              created_by: user.id,
+              created_at: new Date().toISOString()
+            });
+
+            // Log the response for debugging
+            console.log('Contact creation response:', response);
+
+            if (response.error) {
+              // Handle specific error cases
+              if (response.error.code === '23505') {
+                throw new Error('A contact with this information already exists');
+              } else if (response.error.code === '23503') {
+                throw new Error('Invalid user reference');
+              } else if (response.error.message?.includes('timeout')) {
+                throw new Error('Request timeout. Please try again.');
+              } else if (response.error.message?.includes('connection')) {
+                throw new Error('Database connection lost. Please try again.');
+              } else {
+                throw new Error(`Failed to create contact: ${response.error.message}`);
+              }
+            }
+
+            return response;
+          }, 3, 1000, 15000);
+          
+          if (error) {
+            throw error;
+          }
+          
+          toast.success(t('contact.created'));
+          router.replace("/");
+        } catch (error) {
+          // If contact creation fails, ensure credit is refunded
+          await refreshCredits();
+          console.error("Error saving contact:", error);
+          if (error instanceof Error) {
+            if (error.message.includes('Network connection lost')) {
+              toast.error('Network connection lost. Please check your internet connection and try again.');
+            } else if (error.message.includes('timeout')) {
+              toast.error('Request timeout. Please try again.');
+            } else if (error.message.includes('connection')) {
+              toast.error('Database connection lost. Please try again.');
+            } else {
+              toast.error(error.message || t('contact.failedSave'));
+            }
+          } else {
+            toast.error(t('contact.failedSave'));
+          }
+        }
       }
     } catch (error) {
       console.error("Error saving contact:", error);
-      toast.error("Failed to save contact");
+      if (error instanceof Error) {
+        if (error.message.includes('Network connection lost')) {
+          toast.error('Network connection lost. Please check your internet connection and try again.');
+        } else if (error.message.includes('timeout')) {
+          toast.error('Request timeout. Please try again.');
+        } else if (error.message.includes('connection')) {
+          toast.error('Database connection lost. Please try again.');
+        } else {
+          toast.error(error.message || t('contact.failedSave'));
+        }
+      } else {
+        toast.error(t('contact.failedSave'));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +214,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
             htmlFor="first_name"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            First Name <span className="text-red-500">*</span>
+            {t('contact.firstName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -145,7 +231,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
             htmlFor="last_name"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Last Name <span className="text-red-500">*</span>
+            {t('contact.lastName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -164,7 +250,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="email"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Email
+          {t('contact.email')}
         </label>
         <input
           type="email"
@@ -181,7 +267,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="phone"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Phone Number
+          {t('contact.phone')} <span className="text-red-500">*</span>
         </label>
         <input
           type="tel"
@@ -189,6 +275,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           name="phone"
           value={formValues.phone}
           onChange={handleChange}
+          required
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
         />
       </div>
@@ -198,7 +285,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="address"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Address
+          {t('contact.address')}
         </label>
         <input
           type="text"
@@ -215,7 +302,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
           htmlFor="notes"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Notes
+          {t('contact.notes')}
         </label>
         <textarea
           id="notes"
@@ -227,25 +314,25 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, isEditing = false })
         />
       </div>
 
-      <div className="flex gap-3 justify-end pt-4">
+      <div className="flex justify-end space-x-3">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push("/")}
           disabled={submitting}
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button type="submit" disabled={submitting}>
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {t('contact.saving')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              {isEditing ? "Update Contact" : "Save Contact"}
+              {isEditing ? t('contact.update') : t('contact.save')}
             </>
           )}
         </Button>

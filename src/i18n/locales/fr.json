@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VT Tracker",
+    "appName": "Phœnix - Visite technique",
     "loading": "Chargement...",
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -14,7 +14,13 @@
     "language": "Langue",
     "english": "Anglais",
     "french": "Français",
-    "spanish": "Espagnol"
+    "spanish": "Espagnol",
+    "createNewContact": "Créer un Nouveau Contact",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat trouvé",
+    "allRightsReserved": "Tous droits réservés"
   },
   "contact": {
     "firstName": "Prénom",
@@ -31,9 +37,12 @@
     "invalidEmail": "Veuillez entrer une adresse email valide",
     "invalidPhone": "Veuillez entrer un numéro de téléphone valide",
     "create": "Créer un contact",
-    "edit": "Modifier le contact",
+    "edit": "Modifier le Contact",
     "delete": "Supprimer le contact",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce contact ?",
+    "deleted": "Contact supprimé avec succès",
+    "failedDelete": "Échec de la suppression du contact",
+    "addedOn": "Ajouté le",
     "noContacts": "Aucun contact trouvé",
     "search": "Rechercher des contacts...",
     "mustBeLoggedIn": "Vous devez être connecté pour enregistrer des contacts",
@@ -43,7 +52,17 @@
     "failedSave": "Échec de l'enregistrement du contact",
     "saving": "Enregistrement...",
     "update": "Mettre à jour le contact",
-    "save": "Enregistrer le contact"
+    "save": "Enregistrer le contact",
+    "noCredits": "Vous n'avez pas assez de crédits pour créer un nouveau contact",
+    "failedCreate": "Échec de la création du contact",
+    "failedUpdate": "Échec de la mise à jour du contact",
+    "failedLoad": "Échec du chargement des informations du contact"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "addNew": "Ajouter un Contact",
+    "noContacts": "Aucun contact trouvé",
+    "createFirst": "Créer votre premier contact"
   },
   "auth": {
     "email": "Email",
@@ -60,26 +79,12 @@
     "invalidCredentials": "Email ou mot de passe invalide",
     "emailInUse": "Cet email est déjà utilisé"
   },
-  "credits": {
-    "purchase": "Acheter des crédits",
-    "pricePerCredit": "Prix par crédit",
-    "total": "Total",
-    "selectAmount": "Sélectionner le montant",
-    "processing": "Traitement du paiement...",
-    "success": "Crédits achetés avec succès !",
-    "error": "Échec de l'achat des crédits",
-    "forContactCreation": "Crédits pour la création de contacts",
-    "eachCredit": "Chaque crédit coûte {{price}} et vous permet de créer un contact.",
-    "chooseNumber": "Choisissez le nombre de crédits :",
-    "pay": "Payer",
-    "paymentNotReady": "Le système de paiement n'est pas prêt ou l'utilisateur n'est pas connecté",
-    "selectValidAmount": "Veuillez sélectionner un montant valide de crédits"
-  },
   "payment": {
     "purchaseCredits": "Acheter des crédits",
-    "creditsForContact": "Crédits pour la création de contacts",
-    "creditDescription": "Chaque crédit coûte {{price}} et vous permet de créer un contact.",
+    "creditsForContact": "Crédits pour la création de visites techniques",
+    "creditDescription": "Chaque crédit coûte {{price}} et vous permet de créer une visite technique.",
     "chooseCredits": "Choisissez le nombre de crédits :",
+    "credits": "crédits",
     "pricePerCredit": "Prix par crédit :",
     "total": "Total :",
     "processing": "Traitement en cours...",

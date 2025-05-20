@@ -19,10 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <title>VT Tracker - Manage Your Contacts</title>
-        <meta name="description" content="VT Tracker helps you manage your contacts with ease." />
+        <title>Phœnix - Visite technique - Manage Your Technical Visits</title>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Phœnix - Visite technique, helps you manage your technical visits with ease." />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/useAuth';
 import Button from '../ui/Button';
-import { LogOut, Menu, X, CreditCard, User, Plus, Globe } from 'lucide-react';
+import { LogOut, Menu, X, CreditCard, Plus, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const Navbar: React.FC<{ onOpenCreditModal: () => void }> = ({ onOpenCreditModal }) => {
@@ -41,10 +41,20 @@ const Navbar: React.FC<{ onOpenCreditModal: () => void }> = ({ onOpenCreditModal
           <div className="flex">
             <Link
               href="/"
-              className="flex-shrink-0 flex items-center text-blue-800 font-bold text-xl"
+              className="flex-shrink-0 flex items-center"
             >
-              <User className="h-6 w-6 mr-2" />
-              {t('common.appName')}
+              <img 
+                src="/logo.jpg" 
+                alt={t('common.appName')}
+                className="h-14 w-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <span className="text-xl font-bold text-blue-600 hidden">
+                {t('common.appName')}
+              </span>
             </Link>
           </div>
 
@@ -79,12 +89,12 @@ const Navbar: React.FC<{ onOpenCreditModal: () => void }> = ({ onOpenCreditModal
                   <span>{credits} {t('common.credits')}</span>
                 </Button>
 
-                <Link href="/contacts/new">
+                {/* <Link href="/contacts/new">
                   <Button size="sm" className="gap-1">
                     <Plus className="h-4 w-4" />
                     {t('common.newContact')}
                   </Button>
-                </Link>
+                </Link> */}
 
                 <Button
                   variant="outline"

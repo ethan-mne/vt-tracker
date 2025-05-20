@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -12,8 +12,15 @@ const SignInPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.replace('/');
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +35,7 @@ const SignInPage: React.FC = () => {
         setError('Invalid email or password. Please try again.');
       } else {
         // Successful login - redirect to home
-        router.push('/');
+        router.replace('/');
       }
     } catch (err) {
       console.error("Unexpected error during sign in:", err);
@@ -40,53 +47,73 @@ const SignInPage: React.FC = () => {
 
   return (
     <div>
-      <h3 className="text-xl font-semibold text-center mb-6">Sign In</h3>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        Sign in to your account
+      </h2>
       
       {error && (
-        <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 text-sm">
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
           {error}
         </div>
       )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Email Address"
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          required
-          autoComplete="email"
-        />
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="mt-1"
+            placeholder="Enter your email"
+          />
+        </div>
         
-        <Input
-          label="Password"
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter your password"
-          required
-          autoComplete="current-password"
-        />
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="mt-1"
+            placeholder="Enter your password"
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="text-sm">
+            <Link href="/sign-up" className="text-blue-600 hover:text-blue-500">
+              Don't have an account? Sign up
+            </Link>
+          </div>
+        </div>
         
         <Button
           type="submit"
-          className="w-full mt-6 flex items-center justify-center gap-2"
-          loading={loading}
+          className="w-full"
+          disabled={loading}
         >
-          <LogIn className="h-5 w-5" />
-          Sign In
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              Signing in...
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
+              <LogIn className="w-5 h-5 mr-2" />
+              Sign in
+            </div>
+          )}
         </Button>
       </form>
-      
-      <div className="mt-6 text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <Link href="/sign-up" className="text-blue-600 hover:text-blue-800 font-medium">
-          Sign up
-        </Link>
-      </div>
     </div>
   );
 };
